@@ -20,6 +20,7 @@ import {
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
 import { formatDate, getHijriDateString } from '../utils/formatters';
+import ReactDOMServer from 'react-dom/server';
 
 const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
@@ -55,6 +56,176 @@ function KopSurat({ heading1, heading2, area, address, phone, email }) {
           <span className="text-[#0000FF] underline">{email}</span>{' '}
           <img src="/icon-email.png" alt="Email" className="inline-block w-[11px] h-[11px] align-middle" />
         </p>
+      </div>
+    </div>
+  );
+}
+
+/* LEMBAR SURAT RESMI — satu layout mengikuti PAN-UNDANGAN RA.docx, dipakai utk preview & cetak */
+function LetterSheet({ letter, settings = {} }) {
+  const isRa = letter.template === 'undangan-ra' || Boolean(letter.eventName);
+  const eventTitle = (letter.eventName || 'Rapat Anggota IV Dan Konferensi IV').toUpperCase();
+
+  return (
+    <div
+      className="print-container bg-white text-slate-900 text-[11.5px] leading-relaxed"
+      style={{ fontFamily: "'Times New Roman', Times, serif" }}
+    >
+      {/* KOP SURAT PANITIA (identik dengan PAN-UNDANGAN RA.docx) */}
+      <KopSurat
+        heading1={`PANITIA ${eventTitle}`}
+        heading2={letter.kopLine2 || 'PIMPINAN RANTING IPNU DAN IPPNU'}
+        area={letter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}
+        address={letter.kopAddress || settings.secretariatAddress || 'Jl. Otto Iskandardinata Baros Pekalongan Timur, 51129.'}
+        phone={letter.kopContact || settings.phoneContact || '089669438098 (Firdaus), 088227653594 (Irfan)'}
+        email={letter.kopEmail || settings.emailContact || 'ipnuppnubaros@gmail.com'}
+      />
+
+      {/* Nomor, Lampiran, Hal */}
+      <div className="mb-5 text-[11.5px]">
+        <p><span className="font-semibold">Nomor</span>&emsp;: {letter.letterNumber}</p>
+        <p><span className="font-semibold">Lampiran</span>&nbsp;: -</p>
+        <p><span className="font-semibold">Hal</span>&emsp;&emsp;: <span className="font-bold underline">{letter.subject}</span></p>
+      </div>
+
+      {/* Alamat Tujuan */}
+      <div className="mb-5">
+        <p>Yth.</p>
+        <p className="font-bold pl-5">{letter.recipientOrSender || ''}</p>
+        <p className="pl-5">Di-</p>
+        <p className="pl-9">Tempat</p>
+      </div>
+
+      {/* Salam Pembuka */}
+      <p className="mb-3 text-justify">
+        Assalamu'alaikum Wr.Wb. Bismillahirrahmanirrahim
+      </p>
+
+      {/* Isi Surat */}
+      <div className="text-justify space-y-3">
+        <p>
+          Salam silaturahim kami sampaikan dengan iringan do'a, semoga Rekan dan Rekanita dalam lindungan Allah Yang Maha Esa, serta diberi kekuatan dan kesehatan dalam menjalankan tugas sehari-hari. Aamien.
+        </p>
+
+        {isRa ? (
+          <>
+            <p>
+              Dalam rangka "{letter.eventName || 'Rapat Anggota IV Dan Konferensi IV'}", yang akan dilaksanakan pada:
+            </p>
+            <div className="ml-6 mr-6 space-y-1">
+              <div className="grid grid-cols-4">
+                <span>Hari/Tanggal</span>
+                <span className="col-span-3">: {letter.eventDayDate || formatDate(letter.date)}</span>
+              </div>
+              <div className="grid grid-cols-4">
+                <span>Waktu</span>
+                <span className="col-span-3">: {letter.eventTime || ''}</span>
+              </div>
+              <div className="grid grid-cols-4">
+                <span>Tempat</span>
+                <span className="col-span-3">: {letter.eventLocation || ''}</span>
+              </div>
+            </div>
+            <p>Demi kelancaran acara tersebut, kami mengundang {letter.greetingCall || 'Rekan'} untuk menghadiri kegiatan tersebut.</p>
+            <p>
+              {letter.notes || 'Demikian pemberitahuan ini kami sampaikan, atas perhatian dan kehadirannya kami ucapkan terimakasih.'}
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+              {letter.content || "Sehubungan dengan agenda kerja organisasi Pimpinan Ranting, bersama ini kami mengharap kehadiran Rekan / Rekanita pada agenda yang akan dilaksanakan pada:"}
+            </p>
+            <div className="ml-6 mr-6 space-y-1">
+              <div className="grid grid-cols-4">
+                <span>Hari/Tanggal</span>
+                <span className="col-span-3">: {letter.eventDayDate || (letter.date ? formatDate(letter.date) : '-')}</span>
+              </div>
+              <div className="grid grid-cols-4">
+                <span>Waktu</span>
+                <span className="col-span-3">: {letter.eventTime || '- - -'}</span>
+              </div>
+              <div className="grid grid-cols-4">
+                <span>Tempat</span>
+                <span className="col-span-3">: {letter.eventLocation || '- - -'}</span>
+              </div>
+              <div className="grid grid-cols-4">
+                <span>Acara</span>
+                <span className="col-span-3 font-bold">: {letter.subject}</span>
+              </div>
+            </div>
+            <p>
+              Demikian surat ini kami sampaikan, atas perhatian, perkenan dan kerjasamanya kami ucapkan terima kasih yang sebesar-besarnya.
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Kalimat Penutup Resmi NU */}
+      <div className="mt-5 space-y-1">
+        <p className="font-serif italic font-bold">
+          {letter.organization === 'IPPNU'
+            ? 'Wallahu Waliyyut Taufiq Wal Hidayah'
+            : 'Wallahulmuwafiq ilaa Aqwamith thorieq'}
+        </p>
+        <p className="italic">
+          Wassalamu'alaikum Wr.Wb
+        </p>
+      </div>
+
+      {/* Tempat & Tanggal */}
+      <div className="mt-5 text-right">
+        <p className="font-semibold">{letter.letterPlace || 'Pekalongan'}, {formatDate(letter.date)} M</p>
+        <p className="font-semibold">{getHijriDateString(letter.date)}</p>
+      </div>
+
+      {/* Kolom Panitia */}
+      <div className="mt-8 text-center">
+        <p className="font-bold uppercase leading-snug">PANITIA {eventTitle}</p>
+        <p className="font-bold uppercase">PIMPINAN RANTING IPNU &amp; IPPNU BAROS</p>
+        <p className="font-bold uppercase">{letter.kopLine3 || 'KELURAHAN KALIBAROS'}</p>
+      </div>
+
+      {/* TTD Panitia: Ketua Pelaksana & Sekretaris */}
+      <div className="grid grid-cols-2 gap-8 mt-8 text-center">
+        <div>
+          <p className="font-semibold">Ketua Pelaksana,</p>
+          <div className="h-16" />
+          <p className="font-bold uppercase underline">{letter.committeeChairman || '-'}</p>
+        </div>
+        <div>
+          <p className="font-semibold">Sekretaris,</p>
+          <div className="h-16" />
+          <p className="font-bold uppercase underline">{letter.committeeSecretary || '-'}</p>
+        </div>
+      </div>
+
+      {/* Mengetahui */}
+      <div className="mt-10">
+        <p className="font-semibold pl-4">Mengetahui,</p>
+        <p className="font-bold uppercase text-center leading-snug mt-1">
+          PIMPINAN RANTING
+          <br />
+          IKATAN PELAJAR NAHDLATUL ULAMA
+          <br />
+          IKATAN PELAJAR PUTRI NAHDLATUL ULAMA
+          <br />
+          {letter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}
+        </p>
+      </div>
+
+      {/* TTD Pengurus: Ketua IPNU & Ketua IPPNU */}
+      <div className="grid grid-cols-2 gap-8 mt-8 text-center">
+        <div>
+          <p className="font-semibold">Ketua IPNU,</p>
+          <div className="h-16" />
+          <p className="font-bold uppercase underline">{letter.chairmanIpnu || '-'}</p>
+        </div>
+        <div>
+          <p className="font-semibold">Ketua IPPNU,</p>
+          <div className="h-16" />
+          <p className="font-bold uppercase underline">{letter.chairmanIppnu || '-'}</p>
+        </div>
       </div>
     </div>
   );
@@ -254,7 +425,65 @@ export default function Letters({ activeOrg, settings = {} }) {
   };
 
   const handlePrint = () => {
-    window.print();
+    if (!selectedLetter) return;
+
+    const markup = ReactDOMServer.renderToStaticMarkup(
+      <LetterSheet letter={selectedLetter} settings={settings} />
+    ).replace(/src="\//g, `src="${window.location.origin}/`);
+
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => {
+        if (el.tagName === 'STYLE') return el.textContent || '';
+        return null;
+      })
+      .filter(Boolean)
+      .join('\n');
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(iframe);
+
+    const printDoc = iframe.contentWindow.document;
+    printDoc.open();
+    printDoc.write(`<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cetak Surat Resmi</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      body {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: #000000;
+      }
+      @page { size: A4 portrait; margin: 15mm 20mm; }
+      ${styles}
+    </style>
+  </head>
+  <body>${markup}</body>
+</html>`);
+    printDoc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 5000);
+    }, 400);
   };
 
   const fileToDataUrl = (file) =>
@@ -1014,9 +1243,7 @@ export default function Letters({ activeOrg, settings = {} }) {
             {/* Top Toolbar */}
             <div className="no-print flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
               <div className="text-xs text-slate-600 font-medium">
-                {selectedLetter.template === 'undangan-ra'
-                  ? 'Undangan Panitia Rapat Anggota & Konferensi (mengikuti PAN-UNDANGAN RA)'
-                  : 'Surat Resmi Standar Pedoman Administrasi IPNU & IPPNU'}
+                Format Surat Resmi mengikuti PAN-UNDANGAN RA.docx (berlaku utk semua surat)
               </div>
               <button
                 onClick={handlePrint}
@@ -1027,263 +1254,10 @@ export default function Letters({ activeOrg, settings = {} }) {
               </button>
             </div>
 
-            {selectedLetter.template === 'undangan-ra' ? (
-              /* ===================== LAYOUT PANITIA RA (PAN-UNDANGAN RA.docx) ===================== */
-              <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto"
-                style={{ fontFamily: "'Times New Roman', Times, serif" }}
-              >
-                {/* KOP SURAT PANITIA RA (identik dengan template standar) */}
-                <KopSurat
-                  heading1={`Panitia ${selectedLetter.eventName ? selectedLetter.eventName.toUpperCase() : 'RAPAT ANGGOTA IV DAN KONFERENSI IV'}`}
-                  heading2={selectedLetter.kopLine2 || 'PIMPINAN RANTING IPNU DAN IPPNU'}
-                  area={selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}
-                  address={selectedLetter.kopAddress || settings.secretariatAddress || 'Jl. Otto Iskandardinata Baros Pekalongan Timur, 51129.'}
-                  phone={selectedLetter.kopContact || settings.phoneContact || '0896-6943-8098 (Firdaus), 0882-2765-3594 (Irfan)'}
-                  email={selectedLetter.kopEmail || settings.emailContact || 'ipnuppnubaros@gmail.com'}
-                />
-
-                {/* Nomor, Lampiran, Hal */}
-                <div className="mb-5 text-[11.5px]">
-                  <p><span className="font-semibold">Nomor</span>&emsp;: {selectedLetter.letterNumber}</p>
-                  <p><span className="font-semibold">Lampiran</span>&nbsp;: -</p>
-                  <p><span className="font-semibold">Hal</span>&emsp;&emsp;: <span className="font-bold underline">{selectedLetter.subject}</span></p>
-                </div>
-
-                {/* Alamat Tujuan */}
-                <div className="mb-5">
-                  <p>Yth.</p>
-                  <p className="font-bold pl-5">{selectedLetter.recipientOrSender || ''}</p>
-                  <p className="pl-5">Di-</p>
-                  <p className="pl-9">Tempat</p>
-                </div>
-
-                {/* Salam Pembuka */}
-                <p className="mb-3 text-justify">
-                  Assalamu'alaikum Wr.Wb. Bismillahirrahmanirrahim
-                </p>
-
-                {/* Isi Surat */}
-                <div className="text-justify space-y-3">
-                  <p>
-                    Salam silaturahim kami sampaikan dengan iringan do'a, semoga Rekan dan Rekanita dalam lindungan Allah Yang Maha Esa, serta diberi kekuatan dan kesehatan dalam menjalankan tugas sehari-hari. Aamien.
-                  </p>
-                  <p>
-                    Dalam rangka "{selectedLetter.eventName || 'Rapat Anggota IV Dan Konferensi IV'}", yang akan dilaksanakan pada:
-                  </p>
-                  <div className="ml-6 mr-6 space-y-1">
-                    <div className="grid grid-cols-4">
-                      <span>Hari/Tanggal</span>
-                      <span className="col-span-3">: {selectedLetter.eventDayDate || formatDate(selectedLetter.date)}</span>
-                    </div>
-                    <div className="grid grid-cols-4">
-                      <span>Waktu</span>
-                      <span className="col-span-3">: {selectedLetter.eventTime || ''}</span>
-                    </div>
-                    <div className="grid grid-cols-4">
-                      <span>Tempat</span>
-                      <span className="col-span-3">: {selectedLetter.eventLocation || ''}</span>
-                    </div>
-                  </div>
-                  <p>
-                    Demi kelancaran acara tersebut, kami mengundang {selectedLetter.greetingCall || 'Rekan'} untuk menghadiri kegiatan tersebut.
-                  </p>
-                  <p>
-                    {selectedLetter.notes || 'Demikian pemberitahuan ini kami sampaikan, atas perhatian dan kehadirannya kami ucapkan terimakasih.'}
-                  </p>
-                </div>
-
-                {/* Penutup NU */}
-                <div className="mt-5 space-y-1">
-                  <p className="font-serif italic font-bold">Wallahulmuwafiq ilaa Aqwamith thorieq</p>
-                  <p className="italic">Wassalamu'alaikum Wr.Wb</p>
-                </div>
-
-                {/* Tempat & Tanggal */}
-                <div className="mt-5 text-right">
-                  <p className="font-semibold">{selectedLetter.letterPlace || 'Pekalongan'}, {formatDate(selectedLetter.date)} M</p>
-                  <p className="font-semibold">{getHijriDateString(selectedLetter.date)}</p>
-                </div>
-
-                {/* Kolom Panitia */}
-                <div className="mt-8 text-center">
-                  <p className="font-bold uppercase leading-snug">
-                    PANITIA {selectedLetter.eventName ? selectedLetter.eventName.toUpperCase() : 'RAPAT ANGGOTA IV DAN KONFERENSI IV'}
-                  </p>
-                  <p className="font-bold uppercase">PIMPINAN RANTING IPNU &amp; IPPNU BAROS</p>
-                  <p className="font-bold uppercase">{selectedLetter.kopLine3 || 'KELURAHAN KALIBAROS'}</p>
-                </div>
-
-                {/* TTD Panitia: Ketua & Sekretaris Pelaksana */}
-                <div className="grid grid-cols-2 gap-8 mt-8 text-center">
-                  <div>
-                    <p className="font-semibold">Ketua Pelaksana,</p>
-                    <div className="h-16" />
-                    <p className="font-bold uppercase underline">{selectedLetter.committeeChairman || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Sekretaris,</p>
-                    <div className="h-16" />
-                    <p className="font-bold uppercase underline">{selectedLetter.committeeSecretary || '-'}</p>
-                  </div>
-                </div>
-
-                {/* Mengetahui */}
-                <div className="mt-10">
-                  <p className="font-semibold pl-4">Mengetahui,</p>
-                  <p className="font-bold uppercase text-center leading-snug mt-1">
-                    PIMPINAN RANTING
-                    <br />
-                    IKATAN PELAJAR NAHDLATUL ULAMA
-                    <br />
-                    IKATAN PELAJAR PUTRI NAHDLATUL ULAMA
-                    <br />
-                    {selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}
-                  </p>
-                </div>
-
-                {/* TTD Pengurus: Ketua IPNU & Ketua IPPNU */}
-                <div className="grid grid-cols-2 gap-8 mt-8 text-center">
-                  <div>
-                    <p className="font-semibold">Ketua IPNU,</p>
-                    <div className="h-16" />
-                    <p className="font-bold uppercase underline">{selectedLetter.chairmanIpnu || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Ketua IPPNU,</p>
-                    <div className="h-16" />
-                    <p className="font-bold uppercase underline">{selectedLetter.chairmanIppnu || '-'}</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* ===================== LAYOUT SURAT RESMI STANDAR (konsisten dgn format Pan. RA) ===================== */
-              <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto"
-                style={{ fontFamily: "'Times New Roman', Times, serif" }}
-              >
-                {/* KOP SURAT RESMI (identik dengan template Pan. RA) */}
-                <KopSurat
-                  heading1={selectedLetter.organization === 'IPNU'
-                    ? 'PIMPINAN RANTING IKATAN PELAJAR NAHDLATUL ULAMA'
-                    : selectedLetter.organization === 'IPPNU'
-                    ? 'PIMPINAN RANTING IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'
-                    : 'PIMPINAN RANTING IPNU DAN IPPNU'}
-                  heading2={`${settings.villageName ? settings.villageName.toUpperCase() : 'KALIBAROS'} KELURAHAN KECAMATAN ${settings.subDistrict ? settings.subDistrict.toUpperCase() : 'PEKALONGAN TIMUR'}`}
-                  area={(settings.district || 'Kota Pekalongan').trim().toUpperCase()}
-                  address={settings.secretariatAddress || "Sekretariat: Gedung Bersama PR IPNU IPPNU Kalibaros"}
-                  phone={settings.phoneContact || '0812-3456-7890'}
-                  email={settings.emailContact || 'ipnuippnubaros@gmail.com'}
-                />
-
-                {/* Nomor, Lampiran, Hal */}
-                <div className="mb-5">
-                  <p><span className="font-semibold">Nomor</span>&emsp;: {selectedLetter.letterNumber}</p>
-                  <p><span className="font-semibold">Lampiran</span>&nbsp;: -</p>
-                  <p><span className="font-semibold">Hal</span>&emsp;&emsp;: <span className="font-bold underline">{selectedLetter.subject}</span></p>
-                </div>
-
-                {/* Alamat Tujuan */}
-                <div className="mb-5">
-                  <p>Yth.</p>
-                  <p className="font-bold pl-5">{selectedLetter.recipientOrSender || ''}</p>
-                  <p className="pl-5">Di-</p>
-                  <p className="pl-9">Tempat</p>
-                </div>
-
-                {/* Salam Pembuka */}
-                <p className="mb-3 text-justify">
-                  Assalamu'alaikum Wr.Wb. Bismillahirrahmanirrahim
-                </p>
-
-                {/* Isi Surat */}
-                <div className="text-justify space-y-3">
-                  <p>
-                    Salam silaturrahim kami sampaikan dengan iringan do'a, semoga Rekan dan Rekanita dalam lindungan Allah Yang Maha Esa, serta diberi kekuatan dan kesehatan dalam menjalankan tugas sehari-hari. Aamien.
-                  </p>
-
-                  <p>
-                    {selectedLetter.content || "Sehubungan dengan agenda kerja organisasi Pimpinan Ranting, bersama ini kami mengharap kehadiran Rekan / Rekanita pada agenda yang akan dilaksanakan pada:"}
-                  </p>
-
-                  {/* Detail Acara */}
-                  <div className="ml-6 mr-6 space-y-1">
-                    <div className="grid grid-cols-4">
-                      <span>Hari/Tanggal</span>
-                      <span className="col-span-3">: {selectedLetter.eventDayDate || (selectedLetter.date ? formatDate(selectedLetter.date) : '-')}</span>
-                    </div>
-                    <div className="grid grid-cols-4">
-                      <span>Waktu</span>
-                      <span className="col-span-3">: {selectedLetter.eventTime || '- - -'}</span>
-                    </div>
-                    <div className="grid grid-cols-4">
-                      <span>Tempat</span>
-                      <span className="col-span-3">: {selectedLetter.eventLocation || '- - -'}</span>
-                    </div>
-                    <div className="grid grid-cols-4">
-                      <span>Acara</span>
-                      <span className="col-span-3 font-bold">: {selectedLetter.subject}</span>
-                    </div>
-                  </div>
-
-                  <p>
-                    Demikian surat ini kami sampaikan, atas perhatian, perkenan dan kerjasamanya kami ucapkan terima kasih yang sebesar-besarnya.
-                  </p>
-                </div>
-
-                {/* Kalimat Penutup Resmi NU */}
-                <div className="mt-5 space-y-1">
-                  <p className="font-serif italic font-bold">
-                    {selectedLetter.organization === 'IPPNU' 
-                      ? 'Wallahu Waliyyut Taufiq Wal Hidayah' 
-                      : 'Wallahul Muwaffiq Ila Aqwamith Thorieq'}
-                  </p>
-                  <p className="italic">
-                    Wassalamu'alaikum Wr.Wb
-                  </p>
-                </div>
-
-                {/* Tempat & Tanggal */}
-                <div className="mt-5 text-right">
-                  <p className="font-semibold">{(selectedLetter.letterPlace || 'Pekalongan')}, {formatDate(selectedLetter.date)} M</p>
-                  <p className="font-semibold">{getHijriDateString(selectedLetter.date)}</p>
-                </div>
-
-                {/* Kolom Tanda Tangan */}
-                <div className="mt-8">
-                  <div className="text-center font-bold uppercase mb-8">
-                    PIMPINAN RANTING {selectedLetter.organization === 'BERSAMA' ? 'IPNU - IPPNU' : selectedLetter.organization} DESA {settings.villageName || 'SUKAMAJU'}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-8 text-center">
-                    {/* Left: Sekretaris */}
-                    <div>
-                      <p className="font-semibold">Sekretaris Mandataris,</p>
-                      <div className="h-16" />
-                      <p className="font-bold uppercase underline text-slate-900">
-                        {selectedLetter.organization === 'IPPNU' 
-                          ? (settings.secretaryIppnu || 'Dewi Lestari') 
-                          : (settings.secretaryIpnu || 'Muhammad Rifqi')}
-                      </p>
-                      <p className="text-[10px] text-slate-500">NIA: 3302.22.003</p>
-                    </div>
-
-                    {/* Right: Ketua */}
-                    <div>
-                      <p className="font-semibold">Ketua Mandataris,</p>
-                      <div className="h-16" />
-                      <p className="font-bold uppercase underline text-slate-900">
-                        {selectedLetter.organization === 'IPPNU' 
-                          ? (settings.leaderIppnu || 'Siti Nur Halizah') 
-                          : (settings.leaderIpnu || 'Ahmad Fauzi')}
-                      </p>
-                      <p className="text-[10px] text-slate-500">NIA: 3302.20.001</p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            )}
+            {/* Preview lembar surat: format Pan. RA (PAN-UNDANGAN RA.docx) utk semua surat */}
+            <div className="bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto">
+              <LetterSheet letter={selectedLetter} settings={settings} />
+            </div>
           </div>
         )}
       </Modal>
