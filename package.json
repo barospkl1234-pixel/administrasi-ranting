@@ -13,6 +13,11 @@
   },
   "keywords": ["ipnu", "ippnu", "administrasi", "desa", "ranting"],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^2.3.0"
+  }
 }
 
