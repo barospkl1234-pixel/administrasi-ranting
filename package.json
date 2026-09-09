@@ -1,0 +1,17 @@
+{
+  "name": "administrasi-ipnu-ippnu",
+  "version": "1.0.0",
+  "description": "Sistem Administrasi Pimpinan Ranting (PR) IPNU IPPNU Desa",
+  "main": "server/index.js",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "server": "node server/index.js",
+    "client": "npm run dev --prefix client",
+    "dev": "node dev.js",
+    "build": "npm run build --prefix client"
+  },
+  "keywords": ["ipnu", "ippnu", "administrasi", "desa", "ranting"],
+  "author": "",
+  "license": "MIT"
+}
+
