@@ -12,11 +12,53 @@ import {
   Inbox,
   CheckCircle,
   Copy,
-  Eye
+  Eye,
+  Megaphone,
+  Upload,
+  Paperclip
 } from 'lucide-react';
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
 import { formatDate, getHijriDateString } from '../utils/formatters';
+
+const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+/* KOP SURAT RESMI — dipakai SERAGAM oleh semua template (mengikuti PAN-UNDANGAN RA.docx) */
+function KopSurat({ heading1, heading2, area, address, phone, email }) {
+  return (
+    <div className="relative border-b-4 border-double border-slate-800 pb-3 mb-7">
+      {/* Kiri: Logo IPNU & IPPNU berdampingan */}
+      <div className="absolute left-0 top-0 flex items-center gap-1">
+        <img src="/logo-ipnu.png" alt="Logo IPNU" className="w-[3cm] h-[3cm] object-contain" />
+        <img src="/logo-ippnu.png" alt="Logo IPPNU" className="w-[3cm] h-[3cm] object-contain" />
+      </div>
+
+      {/* Kanan: Teks Kop rata kanan */}
+      <div className="text-right pl-[6.2cm]">
+        <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '13.5px' }}>
+          {heading1}
+        </p>
+        <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '13.5px' }}>
+          {heading2}
+        </p>
+        <p className="font-bold uppercase leading-snug" style={{ fontSize: '11.5px', color: '#000000' }}>
+          {area}
+        </p>
+        <p className="font-bold text-[9.5px] leading-snug" style={{ color: '#000000' }}>
+          {address}
+        </p>
+        <p className="font-bold text-[9.5px] leading-snug" style={{ color: '#000000' }}>
+          {phone}{' '}
+          <img src="/icon-telp.png" alt="Telp" className="inline-block w-[11px] h-[11px] align-middle" />
+        </p>
+        <p className="font-bold text-[9.5px] leading-snug">
+          <span className="text-[#0000FF] underline">{email}</span>{' '}
+          <img src="/icon-email.png" alt="Email" className="inline-block w-[11px] h-[11px] align-middle" />
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function Letters({ activeOrg, settings = {} }) {
   const [letters, setLetters] = useState([]);
@@ -29,19 +71,34 @@ export default function Letters({ activeOrg, settings = {} }) {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState(null);
 
+  // Import Surat Masuk
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importItems, setImportItems] = useState([]);
+  const [importing, setImporting] = useState(false);
+
   // Form State
   const initialForm = {
     organization: activeOrg === 'ALL' ? 'IPNU' : activeOrg,
     type: 'Keluar',
     category: 'A', // A = Internal, B = Eksternal
     dept: 'Sek',
+    template: '', // '' = standar, 'undangan-ra' = Panitia Rapat Anggota
     letterNumber: '',
     subject: 'Undangan Pertemuan Rutin Selapanan',
     recipientOrSender: 'Seluruh Anggota & Kader Ranting',
     date: new Date().toISOString().split('T')[0],
-    eventDayDate: 'Ahad Pon, 13 September 2026',
-    eventTime: '19:30 WIB s.d Selesai',
+    eventName: 'Rapat Anggota IV Dan Konferensi IV',
+    eventDayDate: 'Rabu, 29 Oktober 2025',
+    eventTime: '18.30 WIB - selesai',
     eventLocation: "Gedung TPQ Baiturrohim Krajan",
+    greetingCall: 'Rekan',
+    committeeChairman: 'LAELATUL FIRDAUS',
+    committeeSecretary: 'MUHAMMAD IRFANUDIN',
+    chairmanIpnu: 'IDZNIRRAHMAN AL-HAZMI',
+    chairmanIppnu: 'NAURAH SALMA',
+    raEdition: 'IV',
+    kopLine3: 'BAROS KELURAHAN KALIBAROS',
+    letterPlace: 'Pekalongan',
     content: "Sehubungan dengan pelaksanaan agenda rutin selapanan Pimpinan Ranting, kami mengharap dengan hormat kehadiran Rekan/Rekanita pada acara yang insyaAllah akan diselenggarakan pada:",
     notes: "Demikian surat undangan ini kami sampaikan, atas perhatian dan kehadirannya kami ucapkan terima kasih."
   };
@@ -78,11 +135,26 @@ export default function Letters({ activeOrg, settings = {} }) {
     }
   };
 
+  // Compose nomor surat khas Panitia Rapat Anggota (Pan. RA):
+  // 001/PR/Pan. RA/A/7354-7455/IV/X/2025
+  const composeRaNumber = (category = 'A', edition = formData.raEdition || 'IV', dateValue = formData.date) => {
+    const raCount = letters.filter(l => l.type === 'Keluar' && l.dept === 'Pan. RA').length + 1;
+    const seq = String(raCount).padStart(3, '0');
+    const d = dateValue ? new Date(dateValue) : new Date();
+    const dateObj = isNaN(d.getTime()) ? new Date() : d;
+    return `${seq}/PR/Pan. RA/${category}/${settings.codeIpnu || '7354'}-${settings.codeIppnu || '7455'}/${edition || 'IV'}/${ROMAN_MONTHS[dateObj.getMonth()]}/${dateObj.getFullYear()}`;
+  };
+
   const handleOpenAdd = () => {
     const org = activeOrg === 'ALL' ? 'IPNU' : activeOrg;
     setFormData({
       ...initialForm,
-      organization: org
+      organization: org,
+      committeeChairman: settings.treasurerIpnu || 'LAELATUL FIRDAUS',
+      committeeSecretary: settings.secretaryIpnu || 'MUHAMMAD IRFANUDIN',
+      chairmanIpnu: settings.leaderIpnu || 'IDZNIRRAHMAN AL-HAZMI',
+      chairmanIppnu: settings.leaderIppnu || 'NAURAH SALMA',
+      kopLine3: `${(settings.villageName || 'BAROS').toUpperCase()} KELURAHAN ${(settings.subDistrict || 'KALIBAROS').toUpperCase()}`
     });
     fetchSuggestedNumber(org, 'A', 'Sek');
     setIsAddModalOpen(true);
@@ -92,6 +164,8 @@ export default function Letters({ activeOrg, settings = {} }) {
     if (templateKey === 'undangan') {
       setFormData(prev => ({
         ...prev,
+        template: '',
+        dept: 'Sek',
         subject: 'Undangan Pertemuan Rutin Selapanan',
         recipientOrSender: 'Seluruh Anggota & Kader Ranting',
         content: 'Sehubungan dengan pelaksanaan agenda rutin selapanan dan pembacaan Diba\'iyah Pimpinan Ranting, kami mengharap kehadiran Rekan/Rekanita pada:',
@@ -100,6 +174,8 @@ export default function Letters({ activeOrg, settings = {} }) {
     } else if (templateKey === 'izin') {
       setFormData(prev => ({
         ...prev,
+        template: '',
+        dept: 'Sek',
         category: 'B',
         subject: 'Permohonan Izin Peminjaman Tempat & Fasilitas',
         recipientOrSender: "Ta'mir Masjid & Pengelola TPQ",
@@ -110,6 +186,8 @@ export default function Letters({ activeOrg, settings = {} }) {
     } else if (templateKey === 'mandat') {
       setFormData(prev => ({
         ...prev,
+        template: '',
+        dept: 'Sek',
         category: 'A',
         subject: 'Surat Tugas / Mandat Delegasi Konferensi PAC',
         recipientOrSender: 'Panitia Pelaksana Konferancab PAC',
@@ -120,12 +198,36 @@ export default function Letters({ activeOrg, settings = {} }) {
     } else if (templateKey === 'rekomendasi') {
       setFormData(prev => ({
         ...prev,
+        template: '',
+        dept: 'Sek',
         category: 'A',
         subject: 'Surat Keterangan Aktif Berorganisasi',
         recipientOrSender: 'Pihak yang Berkepentingan / Kampus / Sekolah',
         content: 'Yang bertanda tangan di bawah ini menerangkan dengan sesungguhnya bahwa nama kader yang bersangkutan adalah anggota aktif kepengurusan:',
         notes: 'Surat keterangan aktif ini diterbitkan untuk melengkapi persyaratan beasiswa / administrasi kampus.'
       }));
+    } else if (templateKey === 'undangan-ra') {
+      // Format persis PAN-UNDANGAN RA.docx (Panitia Rapat Anggota / Konferensi)
+      setFormData(prev => {
+        const next = {
+          ...prev,
+          template: 'undangan-ra',
+          organization: 'BERSAMA',
+          type: 'Keluar',
+          category: 'A',
+          dept: 'Pan. RA',
+          subject: 'UNDANGAN',
+          recipientOrSender: prev.recipientOrSender || 'Pimpinan Cabang IPNU Kota Pekalongan',
+          eventName: 'Rapat Anggota IV Dan Konferensi IV',
+          eventDayDate: 'Rabu, 29 Oktober 2025',
+          eventTime: '18.30 WIB - selesai',
+          eventLocation: prev.eventLocation || '',
+          greetingCall: prev.greetingCall || 'Rekan',
+          content: '"Rapat Anggota IV Dan Konferensi IV" Pimpinan Ranting IPNU & IPPNU',
+          notes: "Demi kelancaran acara tersebut, kami mengundang " + (prev.greetingCall || 'Rekan') + " untuk menghadiri kegiatan tersebut."
+        };
+        return { ...next, letterNumber: composeRaNumber('A', next.raEdition, next.date) };
+      });
     }
   };
 
@@ -155,6 +257,71 @@ export default function Letters({ activeOrg, settings = {} }) {
     window.print();
   };
 
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handleImportFiles = async (e) => {
+    const files = Array.from(e.target.files || []).filter(f =>
+      f.type.startsWith('image/') || f.type === 'application/pdf'
+    );
+    if (files.length === 0) return;
+
+    const resolved = await Promise.all(
+      files.map(async (f) => {
+        const dataUrl = await fileToDataUrl(f);
+        return {
+          key: `${f.name}-${f.lastModified}-${f.size}`,
+          fileName: f.name,
+          fileType: f.type || 'application/octet-stream',
+          size: f.size,
+          dataUrl,
+          letterNumber: '',
+          recipientOrSender: '',
+          subject: f.name.replace(/\.[^.]+$/, ''),
+          date: new Date().toISOString().split('T')[0],
+        };
+      })
+    );
+
+    setImportItems(prev => [...prev, ...resolved]);
+    e.target.value = '';
+  };
+
+  const updateImportItem = (key, field, value) => {
+    setImportItems(prev => prev.map(it => (it.key === key ? { ...it, [field]: value } : it)));
+  };
+
+  const handleImportSubmit = async (e) => {
+    e.preventDefault();
+    if (importItems.length === 0) return;
+    setImporting(true);
+    try {
+      const payload = importItems.map(it => ({
+        letterNumber: it.letterNumber,
+        subject: it.subject,
+        recipientOrSender: it.recipientOrSender,
+        date: it.date,
+        organization: activeOrg === 'ALL' ? 'BERSAMA' : (activeOrg || 'BERSAMA'),
+        content: '',
+        attachment: { name: it.fileName, type: it.fileType, size: it.size, dataUrl: it.dataUrl },
+      }));
+      const res = await api.importLetters(payload);
+      setIsImportModalOpen(false);
+      setImportItems([]);
+      loadLetters();
+      alert(res.message || 'Surat masuk berhasil diimport');
+    } catch (err) {
+      alert('Gagal import surat masuk: ' + err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       
@@ -169,13 +336,22 @@ export default function Letters({ activeOrg, settings = {} }) {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all shadow-emerald-900/20 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          Buat Surat Baru / Cetak
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition-all shadow-blue-900/20"
+          >
+            <Upload className="w-4 h-4" />
+            Import Surat Masuk
+          </button>
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all shadow-emerald-900/20"
+          >
+            <Plus className="w-4 h-4" />
+            Buat Surat Baru / Cetak
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
@@ -271,6 +447,11 @@ export default function Letters({ activeOrg, settings = {} }) {
                         }`}>
                           {l.type}
                         </span>
+                        {l.dept === 'Pan. RA' && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700">
+                            Pan. RA
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
@@ -285,6 +466,15 @@ export default function Letters({ activeOrg, settings = {} }) {
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <div className="flex items-center justify-center gap-1.5">
+                        {l.attachment && l.attachment.dataUrl && (
+                          <button
+                            onClick={() => window.open(l.attachment.dataUrl, '_blank')}
+                            className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors"
+                            title={`Buka lampiran: ${l.attachment.name || 'surat'}`}
+                          >
+                            <Paperclip className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setSelectedLetter(l);
@@ -337,6 +527,13 @@ export default function Letters({ activeOrg, settings = {} }) {
               </button>
               <button
                 type="button"
+                onClick={() => handleTemplateChange('undangan-ra')}
+                className="px-2.5 py-1 rounded-lg bg-amber-500 border border-amber-400 text-white text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm"
+              >
+                Undangan Panitia RA & Konferensi
+              </button>
+              <button
+                type="button"
                 onClick={() => handleTemplateChange('izin')}
                 className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-900 text-xs font-semibold hover:bg-emerald-600 hover:text-white transition-colors"
               >
@@ -358,6 +555,154 @@ export default function Letters({ activeOrg, settings = {} }) {
               </button>
             </div>
           </div>
+
+          {formData.template === 'undangan-ra' && (
+            <div className="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/70">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-800 mb-2">
+                <Megaphone className="w-4 h-4 text-amber-600" />
+                <span>Detail Undangan Panitia Rapat Anggota (Pan. RA) - format PAN-UNDANGAN RA</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nama Acara *</label>
+                  <input
+                    type="text"
+                    value={formData.eventName}
+                    onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Panggilan Undangan</label>
+                  <select
+                    value={formData.greetingCall}
+                    onChange={(e) => setFormData({ ...formData, greetingCall: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  >
+                    <option value="Rekan">Rekan</option>
+                    <option value="Rekanita">Rekanita</option>
+                    <option value="Bapak">Bapak</option>
+                    <option value="Ibu">Ibu</option>
+                    <option value="Sahabat">Sahabat</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Hari & Tanggal Acara</label>
+                  <input
+                    type="text"
+                    value={formData.eventDayDate}
+                    onChange={(e) => setFormData({ ...formData, eventDayDate: e.target.value })}
+                    placeholder="Rabu, 29 Oktober 2025"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Pelaksanaan</label>
+                  <input
+                    type="text"
+                    value={formData.eventTime}
+                    onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
+                    placeholder="18.30 WIB - selesai"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Tempat / Lokasi</label>
+                  <input
+                    type="text"
+                    value={formData.eventLocation}
+                    onChange={(e) => setFormData({ ...formData, eventLocation: e.target.value })}
+                    placeholder="Aula / Masjid..."
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ketua Pelaksana (Panitia)</label>
+                  <input
+                    type="text"
+                    value={formData.committeeChairman}
+                    onChange={(e) => setFormData({ ...formData, committeeChairman: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Sekretaris Pelaksana (Panitia)</label>
+                  <input
+                    type="text"
+                    value={formData.committeeSecretary}
+                    onChange={(e) => setFormData({ ...formData, committeeSecretary: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ketua IPNU (Mengetahui)</label>
+                  <input
+                    type="text"
+                    value={formData.chairmanIpnu}
+                    onChange={(e) => setFormData({ ...formData, chairmanIpnu: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ketua IPPNU (Mengetahui)</label>
+                  <input
+                    type="text"
+                    value={formData.chairmanIppnu}
+                    onChange={(e) => setFormData({ ...formData, chairmanIppnu: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Edisi RA (Romawi)</label>
+                  <input
+                    type="text"
+                    value={formData.raEdition}
+                    onChange={(e) => {
+                      const edition = e.target.value;
+                      setFormData(prev => ({ ...prev, raEdition: edition, letterNumber: composeRaNumber('A', edition, prev.date) }));
+                    }}
+                    placeholder="IV"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Baris Kop "Kelurahan"</label>
+                  <input
+                    type="text"
+                    value={formData.kopLine3}
+                    onChange={(e) => setFormData({ ...formData, kopLine3: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Kota Terbit</label>
+                  <input
+                    type="text"
+                    value={formData.letterPlace}
+                    onChange={(e) => setFormData({ ...formData, letterPlace: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white"
+                  />
+                </div>
+              </div>
+
+              <p className="text-[10px] text-amber-700 mt-2 font-medium">
+                Nomor surat otomatis dibentuk seperti contoh file: 001/PR/Pan. RA/A/7354-7455/IV/X/2025 (bisa diedit manual).
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -383,8 +728,16 @@ export default function Letters({ activeOrg, settings = {} }) {
                 value={formData.category}
                 onChange={(e) => {
                   const cat = e.target.value;
-                  setFormData(prev => ({ ...prev, category: cat }));
-                  fetchSuggestedNumber(formData.organization, cat, formData.dept);
+                  setFormData(prev => {
+                    const updated = { ...prev, category: cat };
+                    if (updated.template === 'undangan-ra') {
+                      updated.letterNumber = composeRaNumber(cat, updated.raEdition, updated.date);
+                    }
+                    return updated;
+                  });
+                  if (formData.template !== 'undangan-ra') {
+                    fetchSuggestedNumber(formData.organization, cat, formData.dept);
+                  }
                 }}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
               >
@@ -399,12 +752,21 @@ export default function Letters({ activeOrg, settings = {} }) {
                 value={formData.dept}
                 onChange={(e) => {
                   const dept = e.target.value;
-                  setFormData(prev => ({ ...prev, dept }));
-                  fetchSuggestedNumber(formData.organization, formData.category, dept);
+                  setFormData(prev => {
+                    const updated = { ...prev, dept };
+                    if (updated.template === 'undangan-ra') {
+                      updated.letterNumber = composeRaNumber(updated.category, updated.raEdition, updated.date);
+                    }
+                    return updated;
+                  });
+                  if (formData.template !== 'undangan-ra') {
+                    fetchSuggestedNumber(formData.organization, formData.category, dept);
+                  }
                 }}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
               >
                 <option value="Sek">Sek (Kesekretariatan)</option>
+                <option value="Pan. RA">Pan. RA (Panitia Rapat Anggota)</option>
                 <option value="Pan">Pan (Kepanitiaan Khusus)</option>
                 <option value="Kdr">Kdr (Kaderisasi)</option>
                 <option value="Org">Org (Organisasi)</option>
@@ -458,38 +820,40 @@ export default function Letters({ activeOrg, settings = {} }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Hari & Tanggal Acara</label>
-              <input
-                type="text"
-                value={formData.eventDayDate}
-                onChange={(e) => setFormData({ ...formData, eventDayDate: e.target.value })}
-                placeholder="Ahad, 13 September 2026"
-                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-              />
+          {formData.template !== 'undangan-ra' && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Hari & Tanggal Acara</label>
+                <input
+                  type="text"
+                  value={formData.eventDayDate}
+                  onChange={(e) => setFormData({ ...formData, eventDayDate: e.target.value })}
+                  placeholder="Ahad, 13 September 2026"
+                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Pelaksanaan</label>
+                <input
+                  type="text"
+                  value={formData.eventTime}
+                  onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
+                  placeholder="19:30 WIB s.d Selesai"
+                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Tempat / Lokasi</label>
+                <input
+                  type="text"
+                  value={formData.eventLocation}
+                  onChange={(e) => setFormData({ ...formData, eventLocation: e.target.value })}
+                  placeholder="Gedung TPQ Baiturrohim"
+                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Pelaksanaan</label>
-              <input
-                type="text"
-                value={formData.eventTime}
-                onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
-                placeholder="19:30 WIB s.d Selesai"
-                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Tempat / Lokasi</label>
-              <input
-                type="text"
-                value={formData.eventLocation}
-                onChange={(e) => setFormData({ ...formData, eventLocation: e.target.value })}
-                placeholder="Gedung TPQ Baiturrohim"
-                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-              />
-            </div>
-          </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">Catatan Penutup</label>
@@ -519,6 +883,125 @@ export default function Letters({ activeOrg, settings = {} }) {
         </form>
       </Modal>
 
+      {/* MODAL: IMPORT SURAT MASUK (GAMBAR / PDF) */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Surat Masuk (Gambar / PDF)"
+        maxWidth="max-w-3xl"
+      >
+        <form onSubmit={handleImportSubmit} className="space-y-4">
+          <div className="bg-blue-50/60 p-3.5 rounded-xl border border-blue-200/70">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-800 mb-2">
+              <Upload className="w-4 h-4 text-blue-600" />
+              <span>Pilih File Surat Masuk</span>
+            </div>
+            <label className="flex flex-col items-center justify-center gap-2 cursor-pointer border-2 border-dashed border-blue-300 rounded-xl bg-white p-8 text-center hover:bg-blue-50/60 transition-colors">
+              <Paperclip className="w-8 h-8 text-blue-400" />
+              <span className="text-xs font-semibold text-blue-700">
+                Klik untuk memilih beberapa file sekaligus
+              </span>
+              <span className="text-[11px] text-slate-400">Format: JPG, PNG, WEBP, atau PDF</span>
+              <input
+                type="file"
+                accept="image/*,.pdf,application/pdf"
+                multiple
+                onChange={handleImportFiles}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {importItems.length > 0 ? (
+            <>
+              <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
+                {importItems.map((it) => (
+                  <div key={it.key} className="flex items-start gap-3 p-3 bg-white">
+                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center">
+                      {it.fileType === 'application/pdf' ? (
+                        <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[9px] font-black rounded">PDF</span>
+                      ) : (
+                        <img src={it.dataUrl} alt={it.fileName} className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">No. Surat (dari pengirim)</label>
+                        <input
+                          type="text"
+                          value={it.letterNumber}
+                          onChange={(e) => updateImportItem(it.key, 'letterNumber', e.target.value)}
+                          placeholder="mis. 016/PRPKC/IX/26"
+                          className="w-full px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Pengirim</label>
+                        <input
+                          type="text"
+                          value={it.recipientOrSender}
+                          onChange={(e) => updateImportItem(it.key, 'recipientOrSender', e.target.value)}
+                          placeholder="Nama lembaga / instansi pengirim"
+                          className="w-full px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Perihal</label>
+                        <input
+                          type="text"
+                          value={it.subject}
+                          onChange={(e) => updateImportItem(it.key, 'subject', e.target.value)}
+                          className="w-full px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Tanggal Surat</label>
+                        <input
+                          type="date"
+                          value={it.date}
+                          onChange={(e) => updateImportItem(it.key, 'date', e.target.value)}
+                          className="w-full px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => setImportItems(prev => prev.filter(x => x.key !== it.key))}
+                          className="px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg"
+                        >
+                          Batalkan file ini
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setIsImportModalOpen(false); setImportItems([]); }}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={importing}
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm disabled:opacity-50"
+                >
+                  {importing ? 'Mengimport...' : `Simpan ${importItems.length} Surat Masuk`}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-center text-slate-400 py-4">
+              Belum ada file dipilih. Pilih gambar atau PDF surat masuk untuk mulai import.
+            </p>
+          )}
+        </form>
+      </Modal>
+
       {/* MODAL: PREVIEW & CETAK FORMAT RESMI A4 */}
       <Modal
         isOpen={isPreviewModalOpen}
@@ -531,7 +1014,9 @@ export default function Letters({ activeOrg, settings = {} }) {
             {/* Top Toolbar */}
             <div className="no-print flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
               <div className="text-xs text-slate-600 font-medium">
-                Surat Resmi Standar Pedoman Administrasi IPNU & IPPNU
+                {selectedLetter.template === 'undangan-ra'
+                  ? 'Undangan Panitia Rapat Anggota & Konferensi (mengikuti PAN-UNDANGAN RA)'
+                  : 'Surat Resmi Standar Pedoman Administrasi IPNU & IPPNU'}
               </div>
               <button
                 onClick={handlePrint}
@@ -542,179 +1027,252 @@ export default function Letters({ activeOrg, settings = {} }) {
               </button>
             </div>
 
-            {/* Print Container: Real Paper Emulation */}
-            <div className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 font-sans text-xs leading-relaxed max-w-[800px] mx-auto">
-              
-              {/* KOP SURAT RESMI - Format mengikuti contoh PAN-UNDANGAN RA */}
-              <div className="relative border-b-4 border-double border-slate-800 pb-3 mb-6">
-                {/* Logo IPNU (kiri, 3x3 cm) */}
-                <img
-                  src="/logo-ipnu.png"
-                  alt="Logo IPNU"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3cm] h-[3cm] object-contain"
-                />
-                {/* Logo IPPNU (kanan, 3x3 cm) */}
-                <img
-                  src="/logo-ippnu.png"
-                  alt="Logo IPPNU"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[3cm] h-[3cm] object-contain"
+            {selectedLetter.template === 'undangan-ra' ? (
+              /* ===================== LAYOUT PANITIA RA (PAN-UNDANGAN RA.docx) ===================== */
+              <div
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto"
+                style={{ fontFamily: "'Times New Roman', Times, serif" }}
+              >
+                {/* KOP SURAT PANITIA RA (identik dengan template standar) */}
+                <KopSurat
+                  heading1={`Panitia ${selectedLetter.eventName ? selectedLetter.eventName.toUpperCase() : 'RAPAT ANGGOTA IV DAN KONFERENSI IV'}`}
+                  heading2={selectedLetter.kopLine2 || 'PIMPINAN RANTING IPNU DAN IPPNU'}
+                  area={selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}
+                  address={selectedLetter.kopAddress || settings.secretariatAddress || 'Jl. Otto Iskandardinata Baros Pekalongan Timur, 51129.'}
+                  phone={selectedLetter.kopContact || settings.phoneContact || '0896-6943-8098 (Firdaus), 0882-2765-3594 (Irfan)'}
+                  email={selectedLetter.kopEmail || settings.emailContact || 'ipnuppnubaros@gmail.com'}
                 />
 
-                {/* Teks Kop tengah, rata kanan */}
-                <div
-                  className="text-right px-[3.4cm]"
-                  style={{ fontFamily: "'Times New Roman', Times, serif" }}
-                >
-                  <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '14px' }}>
-                    {selectedLetter.organization === 'IPNU'
-                      ? 'PIMPINAN RANTING IKATAN PELAJAR NAHDLATUL ULAMA'
-                      : selectedLetter.organization === 'IPPNU'
-                      ? 'PIMPINAN RANTING IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'
-                      : 'PIMPINAN RANTING IPNU DAN IPPNU'}
-                  </p>
-                  <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '14px' }}>
-                    {settings.villageName ? settings.villageName.toUpperCase() : 'SUKAMAJU'} KELURAHAN/KECAMATAN {settings.subDistrict ? settings.subDistrict.toUpperCase() : 'CILONGOK'}
-                  </p>
-                  <p className="font-bold mt-1" style={{ fontSize: '9.5px', color: '#000000' }}>
-                    {settings.secretariatAddress || "Sekretariat: Gedung MWCNU Sukamaju"}
-                  </p>
-                  <p className="font-bold" style={{ fontSize: '9.5px', color: '#000000' }}>
-                    <span>{settings.phoneContact || '0812-3456-7890'}</span>{' '}
-                    <img src="/icon-telp.png" alt="Telp" className="inline-block w-[11px] h-[11px] align-middle" />
-                  </p>
-                  <p className="font-bold" style={{ fontSize: '9.5px' }}>
-                    <span className="text-[#0000FF] underline">{settings.emailContact || 'pripnuippnu.sukamaju@gmail.com'}</span>{' '}
-                    <img src="/icon-email.png" alt="Email" className="inline-block w-[11px] h-[11px] align-middle" />
-                  </p>
-                </div>
-              </div>
-
-              {/* Tanggal & Tempat */}
-              <div className="flex justify-between items-start mb-6 text-[11px]">
-                <div>
-                  <table className="text-[11px]">
-                    <tbody>
-                      <tr>
-                        <td className="font-semibold pr-2 py-0.5">Nomor</td>
-                        <td className="pr-1">:</td>
-                        <td className="font-mono font-bold">{selectedLetter.letterNumber}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-semibold pr-2 py-0.5">Lampiran</td>
-                        <td className="pr-1">:</td>
-                        <td>-</td>
-                      </tr>
-                      <tr>
-                        <td className="font-semibold pr-2 py-0.5">Perihal</td>
-                        <td className="pr-1">:</td>
-                        <td className="font-bold underline">{selectedLetter.subject}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {/* Nomor, Lampiran, Hal */}
+                <div className="mb-5 text-[11.5px]">
+                  <p><span className="font-semibold">Nomor</span>&emsp;: {selectedLetter.letterNumber}</p>
+                  <p><span className="font-semibold">Lampiran</span>&nbsp;: -</p>
+                  <p><span className="font-semibold">Hal</span>&emsp;&emsp;: <span className="font-bold underline">{selectedLetter.subject}</span></p>
                 </div>
 
-                <div className="text-right">
-                  <p>{settings.villageName || 'Sukamaju'}, {formatDate(selectedLetter.date)}</p>
-                  <p className="text-[10px] text-emerald-800 font-mono font-semibold">{getHijriDateString(selectedLetter.date)}</p>
+                {/* Alamat Tujuan */}
+                <div className="mb-5">
+                  <p>Yth.</p>
+                  <p className="font-bold pl-5">{selectedLetter.recipientOrSender || ''}</p>
+                  <p className="pl-5">Di-</p>
+                  <p className="pl-9">Tempat</p>
                 </div>
-              </div>
 
-              {/* Kepada Yth */}
-              <div className="mb-6">
-                <p className="text-[11px]">Kepada Yang Terhormat:</p>
-                <p className="text-[12px] font-bold text-slate-900 mt-1">{selectedLetter.recipientOrSender}</p>
-                <p className="text-[11px] text-slate-700">di -</p>
-                <p className="text-[11px] font-medium text-slate-700 pl-4">Tempat</p>
-              </div>
-
-              {/* Basmalah */}
-              <div className="text-center my-5 font-amiri text-lg font-bold text-slate-800">
-                بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-              </div>
-
-              {/* Salam Pembuka */}
-              <p className="font-semibold italic mb-3 text-[11px]">
-                Assalamu'alaikum Warahmatullahi Wabarakatuh
-              </p>
-
-              {/* Isi Surat */}
-              <div className="space-y-3 text-[11px] text-justify leading-relaxed">
-                <p>
-                  Salam silaturrahim kami sampaikan, semoga limpahan rahmat, taufiq serta hidayah Allah SWT senantiasa menyertai kita dalam menjalankan aktifitas sehari-hari. Aamiin.
+                {/* Salam Pembuka */}
+                <p className="mb-3 text-justify">
+                  Assalamu'alaikum Wr.Wb. Bismillahirrahmanirrahim
                 </p>
 
-                <p>
-                  {selectedLetter.content || "Sehubungan dengan agenda kerja organisasi Pimpinan Ranting, bersama ini kami mengharap kehadiran Rekan / Rekanita pada agenda yang akan dilaksanakan pada:"}
-                </p>
+                {/* Isi Surat */}
+                <div className="text-justify space-y-3">
+                  <p>
+                    Salam silaturahim kami sampaikan dengan iringan do'a, semoga Rekan dan Rekanita dalam lindungan Allah Yang Maha Esa, serta diberi kekuatan dan kesehatan dalam menjalankan tugas sehari-hari. Aamien.
+                  </p>
+                  <p>
+                    Dalam rangka "{selectedLetter.eventName || 'Rapat Anggota IV Dan Konferensi IV'}", yang akan dilaksanakan pada:
+                  </p>
+                  <div className="ml-6 mr-6 space-y-1">
+                    <div className="grid grid-cols-4">
+                      <span>Hari/Tanggal</span>
+                      <span className="col-span-3">: {selectedLetter.eventDayDate || formatDate(selectedLetter.date)}</span>
+                    </div>
+                    <div className="grid grid-cols-4">
+                      <span>Waktu</span>
+                      <span className="col-span-3">: {selectedLetter.eventTime || ''}</span>
+                    </div>
+                    <div className="grid grid-cols-4">
+                      <span>Tempat</span>
+                      <span className="col-span-3">: {selectedLetter.eventLocation || ''}</span>
+                    </div>
+                  </div>
+                  <p>
+                    Demi kelancaran acara tersebut, kami mengundang {selectedLetter.greetingCall || 'Rekan'} untuk menghadiri kegiatan tersebut.
+                  </p>
+                  <p>
+                    {selectedLetter.notes || 'Demikian pemberitahuan ini kami sampaikan, atas perhatian dan kehadirannya kami ucapkan terimakasih.'}
+                  </p>
+                </div>
 
-                {/* Event specs if any */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 my-3 ml-6 mr-6 space-y-1 text-[11px]">
-                  <div className="grid grid-cols-4">
-                    <span className="font-semibold">Hari / Tanggal</span>
-                    <span className="col-span-3">: {selectedLetter.date ? formatDate(selectedLetter.date) : 'Sesuai Jadwal'}</span>
+                {/* Penutup NU */}
+                <div className="mt-5 space-y-1">
+                  <p className="font-serif italic font-bold">Wallahulmuwafiq ilaa Aqwamith thorieq</p>
+                  <p className="italic">Wassalamu'alaikum Wr.Wb</p>
+                </div>
+
+                {/* Tempat & Tanggal */}
+                <div className="mt-5 text-right">
+                  <p className="font-semibold">{selectedLetter.letterPlace || 'Pekalongan'}, {formatDate(selectedLetter.date)} M</p>
+                  <p className="font-semibold">{getHijriDateString(selectedLetter.date)}</p>
+                </div>
+
+                {/* Kolom Panitia */}
+                <div className="mt-8 text-center">
+                  <p className="font-bold uppercase leading-snug">
+                    PANITIA {selectedLetter.eventName ? selectedLetter.eventName.toUpperCase() : 'RAPAT ANGGOTA IV DAN KONFERENSI IV'}
+                  </p>
+                  <p className="font-bold uppercase">PIMPINAN RANTING IPNU &amp; IPPNU BAROS</p>
+                  <p className="font-bold uppercase">{selectedLetter.kopLine3 || 'KELURAHAN KALIBAROS'}</p>
+                </div>
+
+                {/* TTD Panitia: Ketua & Sekretaris Pelaksana */}
+                <div className="grid grid-cols-2 gap-8 mt-8 text-center">
+                  <div>
+                    <p className="font-semibold">Ketua Pelaksana,</p>
+                    <div className="h-16" />
+                    <p className="font-bold uppercase underline">{selectedLetter.committeeChairman || '-'}</p>
                   </div>
-                  <div className="grid grid-cols-4">
-                    <span className="font-semibold">Waktu</span>
-                    <span className="col-span-3">: 19:30 WIB s.d Selesai</span>
-                  </div>
-                  <div className="grid grid-cols-4">
-                    <span className="font-semibold">Tempat</span>
-                    <span className="col-span-3">: Gedung TPQ Baiturrohim / Balai Desa Sukamaju</span>
-                  </div>
-                  <div className="grid grid-cols-4">
-                    <span className="font-semibold">Acara</span>
-                    <span className="col-span-3 font-bold">: {selectedLetter.subject}</span>
+                  <div>
+                    <p className="font-semibold">Sekretaris,</p>
+                    <div className="h-16" />
+                    <p className="font-bold uppercase underline">{selectedLetter.committeeSecretary || '-'}</p>
                   </div>
                 </div>
 
-                <p>
-                  Demikian surat ini kami sampaikan, atas perhatian, perkenan dan kerjasamanya kami ucapkan terima kasih yang sebesar-besarnya.
-                </p>
-              </div>
-
-              {/* Kalimat Penutup Resmi NU */}
-              <div className="mt-5 space-y-1">
-                <p className="font-serif italic font-bold text-[11px] text-emerald-900">
-                  {selectedLetter.organization === 'IPPNU' 
-                    ? 'Wallahu Waliyyut Taufiq Wal Hidayah' 
-                    : 'Wallahul Muwaffiq Ila Aqwamith Thorieq'}
-                </p>
-                <p className="font-semibold italic text-[11px]">
-                  Wassalamu'alaikum Warahmatullahi Wabarakatuh
-                </p>
-              </div>
-
-              {/* Kolom Tanda Tangan */}
-              <div className="mt-10 pt-4">
-                <div className="text-center font-bold text-[11px] uppercase mb-6">
-                  PIMPINAN RANTING {selectedLetter.organization === 'BERSAMA' ? 'IPNU - IPPNU' : selectedLetter.organization} DESA {settings.villageName || 'SUKAMAJU'}
+                {/* Mengetahui */}
+                <div className="mt-10">
+                  <p className="font-semibold pl-4">Mengetahui,</p>
+                  <p className="font-bold uppercase text-center leading-snug mt-1">
+                    PIMPINAN RANTING
+                    <br />
+                    IKATAN PELAJAR NAHDLATUL ULAMA
+                    <br />
+                    IKATAN PELAJAR PUTRI NAHDLATUL ULAMA
+                    <br />
+                    {selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 text-center text-[11px]">
-                  {/* Left: Sekretaris */}
-                  <div className="flex flex-col justify-between h-28">
-                    <p className="font-semibold">Sekretaris Mandataris,</p>
+                {/* TTD Pengurus: Ketua IPNU & Ketua IPPNU */}
+                <div className="grid grid-cols-2 gap-8 mt-8 text-center">
+                  <div>
+                    <p className="font-semibold">Ketua IPNU,</p>
+                    <div className="h-16" />
+                    <p className="font-bold uppercase underline">{selectedLetter.chairmanIpnu || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Ketua IPPNU,</p>
+                    <div className="h-16" />
+                    <p className="font-bold uppercase underline">{selectedLetter.chairmanIppnu || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* ===================== LAYOUT SURAT RESMI STANDAR (konsisten dgn format Pan. RA) ===================== */
+              <div
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto"
+                style={{ fontFamily: "'Times New Roman', Times, serif" }}
+              >
+                {/* KOP SURAT RESMI (identik dengan template Pan. RA) */}
+                <KopSurat
+                  heading1={selectedLetter.organization === 'IPNU'
+                    ? 'PIMPINAN RANTING IKATAN PELAJAR NAHDLATUL ULAMA'
+                    : selectedLetter.organization === 'IPPNU'
+                    ? 'PIMPINAN RANTING IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'
+                    : 'PIMPINAN RANTING IPNU DAN IPPNU'}
+                  heading2={`${settings.villageName ? settings.villageName.toUpperCase() : 'KALIBAROS'} KELURAHAN KECAMATAN ${settings.subDistrict ? settings.subDistrict.toUpperCase() : 'PEKALONGAN TIMUR'}`}
+                  area={(settings.district || 'Kota Pekalongan').trim().toUpperCase()}
+                  address={settings.secretariatAddress || "Sekretariat: Gedung Bersama PR IPNU IPPNU Kalibaros"}
+                  phone={settings.phoneContact || '0812-3456-7890'}
+                  email={settings.emailContact || 'ipnuippnubaros@gmail.com'}
+                />
+
+                {/* Nomor, Lampiran, Hal */}
+                <div className="mb-5">
+                  <p><span className="font-semibold">Nomor</span>&emsp;: {selectedLetter.letterNumber}</p>
+                  <p><span className="font-semibold">Lampiran</span>&nbsp;: -</p>
+                  <p><span className="font-semibold">Hal</span>&emsp;&emsp;: <span className="font-bold underline">{selectedLetter.subject}</span></p>
+                </div>
+
+                {/* Alamat Tujuan */}
+                <div className="mb-5">
+                  <p>Yth.</p>
+                  <p className="font-bold pl-5">{selectedLetter.recipientOrSender || ''}</p>
+                  <p className="pl-5">Di-</p>
+                  <p className="pl-9">Tempat</p>
+                </div>
+
+                {/* Salam Pembuka */}
+                <p className="mb-3 text-justify">
+                  Assalamu'alaikum Wr.Wb. Bismillahirrahmanirrahim
+                </p>
+
+                {/* Isi Surat */}
+                <div className="text-justify space-y-3">
+                  <p>
+                    Salam silaturrahim kami sampaikan dengan iringan do'a, semoga Rekan dan Rekanita dalam lindungan Allah Yang Maha Esa, serta diberi kekuatan dan kesehatan dalam menjalankan tugas sehari-hari. Aamien.
+                  </p>
+
+                  <p>
+                    {selectedLetter.content || "Sehubungan dengan agenda kerja organisasi Pimpinan Ranting, bersama ini kami mengharap kehadiran Rekan / Rekanita pada agenda yang akan dilaksanakan pada:"}
+                  </p>
+
+                  {/* Detail Acara */}
+                  <div className="ml-6 mr-6 space-y-1">
+                    <div className="grid grid-cols-4">
+                      <span>Hari/Tanggal</span>
+                      <span className="col-span-3">: {selectedLetter.eventDayDate || (selectedLetter.date ? formatDate(selectedLetter.date) : '-')}</span>
+                    </div>
+                    <div className="grid grid-cols-4">
+                      <span>Waktu</span>
+                      <span className="col-span-3">: {selectedLetter.eventTime || '- - -'}</span>
+                    </div>
+                    <div className="grid grid-cols-4">
+                      <span>Tempat</span>
+                      <span className="col-span-3">: {selectedLetter.eventLocation || '- - -'}</span>
+                    </div>
+                    <div className="grid grid-cols-4">
+                      <span>Acara</span>
+                      <span className="col-span-3 font-bold">: {selectedLetter.subject}</span>
+                    </div>
+                  </div>
+
+                  <p>
+                    Demikian surat ini kami sampaikan, atas perhatian, perkenan dan kerjasamanya kami ucapkan terima kasih yang sebesar-besarnya.
+                  </p>
+                </div>
+
+                {/* Kalimat Penutup Resmi NU */}
+                <div className="mt-5 space-y-1">
+                  <p className="font-serif italic font-bold">
+                    {selectedLetter.organization === 'IPPNU' 
+                      ? 'Wallahu Waliyyut Taufiq Wal Hidayah' 
+                      : 'Wallahul Muwaffiq Ila Aqwamith Thorieq'}
+                  </p>
+                  <p className="italic">
+                    Wassalamu'alaikum Wr.Wb
+                  </p>
+                </div>
+
+                {/* Tempat & Tanggal */}
+                <div className="mt-5 text-right">
+                  <p className="font-semibold">{(selectedLetter.letterPlace || 'Pekalongan')}, {formatDate(selectedLetter.date)} M</p>
+                  <p className="font-semibold">{getHijriDateString(selectedLetter.date)}</p>
+                </div>
+
+                {/* Kolom Tanda Tangan */}
+                <div className="mt-8">
+                  <div className="text-center font-bold uppercase mb-8">
+                    PIMPINAN RANTING {selectedLetter.organization === 'BERSAMA' ? 'IPNU - IPPNU' : selectedLetter.organization} DESA {settings.villageName || 'SUKAMAJU'}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-8 text-center">
+                    {/* Left: Sekretaris */}
                     <div>
-                      <p className="font-bold underline text-slate-900">
+                      <p className="font-semibold">Sekretaris Mandataris,</p>
+                      <div className="h-16" />
+                      <p className="font-bold uppercase underline text-slate-900">
                         {selectedLetter.organization === 'IPPNU' 
                           ? (settings.secretaryIppnu || 'Dewi Lestari') 
                           : (settings.secretaryIpnu || 'Muhammad Rifqi')}
                       </p>
                       <p className="text-[10px] text-slate-500">NIA: 3302.22.003</p>
                     </div>
-                  </div>
 
-                  {/* Right: Ketua */}
-                  <div className="flex flex-col justify-between h-28 relative">
-                    <p className="font-semibold">Ketua Mandataris,</p>
-                    {/* Stempel Digital Mockup */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25 pointer-events-none select-none">
-                      <div className="w-20 h-20 rounded-full border-2 border-emerald-800 flex items-center justify-center text-center font-bold text-[8px] text-emerald-800 uppercase p-1">
-                        PR {selectedLetter.organization} SUKAMAJU
-                      </div>
-                    </div>
+                    {/* Right: Ketua */}
                     <div>
-                      <p className="font-bold underline text-slate-900">
+                      <p className="font-semibold">Ketua Mandataris,</p>
+                      <div className="h-16" />
+                      <p className="font-bold uppercase underline text-slate-900">
                         {selectedLetter.organization === 'IPPNU' 
                           ? (settings.leaderIppnu || 'Siti Nur Halizah') 
                           : (settings.leaderIpnu || 'Ahmad Fauzi')}
@@ -723,9 +1281,9 @@ export default function Letters({ activeOrg, settings = {} }) {
                     </div>
                   </div>
                 </div>
-              </div>
 
-            </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -733,4 +1291,3 @@ export default function Letters({ activeOrg, settings = {} }) {
     </div>
   );
 }
-

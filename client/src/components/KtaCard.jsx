@@ -10,9 +10,9 @@ export default function KtaCard({ member, settings = {} }) {
   const isIpnu = member.organization === 'IPNU';
   const orgTitle = isIpnu ? 'IKATAN PELAJAR NAHDLATUL ULAMA' : 'IKATAN PELAJAR PUTRI NAHDLATUL ULAMA';
   const subOrg = isIpnu ? 'PIMPINAN RANTING IPNU' : 'PIMPINAN RANTING IPPNU';
-  const village = settings.villageName || 'Sukamaju';
-  const subDistrict = settings.subDistrict || 'Cilongok';
-  const district = settings.district || 'Banyumas';
+  const village = settings.villageName || 'Kalibaros';
+  const subDistrict = settings.subDistrict || 'Pekalongan Timur';
+  const district = settings.district || 'Kota Pekalongan';
 
   // Card verification payload for QR
   const qrData = JSON.stringify({

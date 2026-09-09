@@ -36,9 +36,9 @@ export default function Navbar({ activePage, activeOrg, setActiveOrg, settings =
               {pageTitles[activePage] || 'Administrasi Ranting'}
             </h1>
             <p className="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
-              <span>PR IPNU - IPPNU Desa {settings.villageName || 'Sukamaju'}</span>
+              <span>PR IPNU - IPPNU Kelurahan {settings.villageName || 'Kalibaros'}</span>
               <span className="text-slate-300">•</span>
-              <span>Kec. {settings.subDistrict || 'Cilongok'}</span>
+              <span>Kec. {settings.subDistrict || 'Pekalongan Timur'}</span>
             </p>
           </div>
         </div>

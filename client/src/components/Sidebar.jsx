@@ -58,7 +58,7 @@ export default function Sidebar({ activePage, setActivePage, isMobileOpen, setIs
                 IPNU & IPPNU
               </h2>
               <p className="text-[11px] text-slate-400 truncate max-w-[150px]">
-                Desa {settings.villageName || 'Sukamaju'}
+                Kelurahan {settings.villageName || 'Kalibaros'}
               </p>
             </div>
           </div>

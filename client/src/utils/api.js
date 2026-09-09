@@ -23,6 +23,22 @@ export async function fetchApi(endpoint, options = {}) {
 
 export const api = {
   getDashboard: () => fetchApi('/dashboard'),
+
+  // Photo upload
+  uploadPhoto: (file) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return fetch(`${BASE_URL}/upload`, {
+      method: 'POST',
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Gagal mengunggah foto');
+      }
+      return data;
+    });
+  },
   
   // Members
   getMembers: (params = {}) => {
@@ -44,6 +60,7 @@ export const api = {
     return fetchApi(`/letters/generate-number?${query}`);
   },
   createLetter: (data) => fetchApi('/letters', { method: 'POST', body: JSON.stringify(data) }),
+  importLetters: (items) => fetchApi('/letters/import', { method: 'POST', body: JSON.stringify({ items }) }),
   deleteLetter: (id) => fetchApi(`/letters/${id}`, { method: 'DELETE' }),
 
   // Finances

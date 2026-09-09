@@ -15,9 +15,9 @@ export default function App() {
   const [activeOrg, setActiveOrg] = useState('ALL'); // 'ALL' | 'IPNU' | 'IPPNU'
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [settings, setSettings] = useState({
-    villageName: "Sukamaju",
-    subDistrict: "Cilongok",
-    district: "Banyumas",
+    villageName: "Kalibaros",
+    subDistrict: "Pekalongan Timur",
+    district: "Kota Pekalongan",
     period: "2025 - 2027",
     codeIpnu: "7354",
     codeIppnu: "7455",
@@ -85,7 +85,7 @@ export default function App() {
 
         {/* Footer */}
         <footer className="no-print border-t border-slate-200/80 py-4 px-8 text-center text-xs text-slate-400 bg-white">
-          <p>© {new Date().getFullYear()} Sistem Informasi & Administrasi Pimpinan Ranting (PR) IPNU - IPPNU Desa {settings.villageName || 'Sukamaju'}.</p>
+          <p>© {new Date().getFullYear()} Sistem Informasi & Administrasi Pimpinan Ranting (PR) IPNU - IPPNU Kelurahan {settings.villageName || 'Kalibaros'}.</p>
           <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">Motto: Belajar, Berjuang, Bertaqwa</p>
         </footer>
 

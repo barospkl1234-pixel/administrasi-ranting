@@ -74,7 +74,7 @@ export default function Dashboard({ activeOrg, setActivePage, settings = {} }) {
             <span>Sistem Informasi & Administrasi Resmi Ranting NU</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Selamat Datang di SIAD PR IPNU IPPNU {settings.villageName || 'Sukamaju'}
+            Selamat Datang di SIAD PR IPNU IPPNU {settings.villageName || 'Kalibaros'}
           </h2>
           <p className="text-sm sm:text-base text-emerald-100/90 mt-2 leading-relaxed">
             Kelola data kaderisasi, penerbitan surat resmi bersurat QR Code, pembukuan kas organisasi, presensi rutinan selapanan, dan inventaris ranting dalam satu sistem terpadu.

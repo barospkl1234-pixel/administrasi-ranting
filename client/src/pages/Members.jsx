@@ -14,7 +14,8 @@ import {
   MapPin,
   Sparkles,
   LayoutGrid,
-  List
+  List,
+  Upload
 } from 'lucide-react';
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
@@ -41,7 +42,7 @@ export default function Members({ activeOrg, settings = {} }) {
     organization: activeOrg === 'ALL' ? 'IPNU' : activeOrg,
     gender: activeOrg === 'IPPNU' ? 'P' : 'L',
     nik: '',
-    pob: 'Banyumas',
+    pob: 'Pekalongan',
     dob: '2005-01-01',
     phone: '',
     dusun: 'Dusun I Krajan',
@@ -55,6 +56,8 @@ export default function Members({ activeOrg, settings = {} }) {
     photo: ''
   };
   const [formData, setFormData] = useState(initialForm);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
 
   const loadMembers = async () => {
     try {
@@ -83,12 +86,16 @@ export default function Members({ activeOrg, settings = {} }) {
       organization: activeOrg === 'ALL' ? 'IPNU' : activeOrg,
       gender: activeOrg === 'IPPNU' ? 'P' : 'L'
     });
+    setPhotoFile(null);
+    setPhotoPreview('');
     setIsAddModalOpen(true);
   };
 
   const handleOpenEdit = (m) => {
     setSelectedMember(m);
     setFormData(m);
+    setPhotoFile(null);
+    setPhotoPreview(m.photo || '');
     setIsEditModalOpen(true);
   };
 
@@ -97,11 +104,39 @@ export default function Members({ activeOrg, settings = {} }) {
     setIsKtaModalOpen(true);
   };
 
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      alert('Format foto harus JPG, PNG, atau WEBP');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran foto maksimal 5 MB');
+      e.target.value = '';
+      return;
+    }
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadPhotoIfNeeded = async () => {
+    if (photoFile) {
+      const res = await api.uploadPhoto(photoFile);
+      return res.url;
+    }
+    return formData.photo || '';
+  };
+
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     try {
-      await api.createMember(formData);
+      const photoUrl = await uploadPhotoIfNeeded();
+      await api.createMember({ ...formData, photo: photoUrl });
       setIsAddModalOpen(false);
+      setPhotoFile(null);
+      setPhotoPreview('');
       loadMembers();
     } catch (err) {
       alert('Gagal menambah kader: ' + err.message);
@@ -111,7 +146,8 @@ export default function Members({ activeOrg, settings = {} }) {
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     try {
-      await api.updateMember(selectedMember.id, formData);
+      const photoUrl = await uploadPhotoIfNeeded();
+      await api.updateMember(selectedMember.id, { ...formData, photo: photoUrl });
       setIsEditModalOpen(false);
       loadMembers();
     } catch (err) {
@@ -578,15 +614,31 @@ export default function Members({ activeOrg, settings = {} }) {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1">URL Foto (Opsional)</label>
-              <input
-                type="url"
-                value={formData.photo}
-                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-                placeholder="https://..."
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">Kosongkan jika ingin memakai avatar default.</p>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Foto Kader (Opsional)</label>
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Pratinjau" className="w-full h-full object-cover" />
+                  ) : (
+                    <Users className="w-8 h-8 text-slate-300" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 cursor-pointer transition-all w-fit">
+                    <Upload className="w-4 h-4 text-slate-500" />
+                    {photoFile ? photoFile.name : 'Pilih Foto dari Perangkat'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-[10px] text-slate-400 mt-1.5">
+                    Format JPG, PNG, atau WEBP. Maksimal 5 MB. Kosongkan untuk memakai avatar default.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -682,6 +734,34 @@ export default function Members({ activeOrg, settings = {} }) {
                 onChange={(e) => setFormData({ ...formData, dusun: e.target.value })}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500"
               />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 mb-1">Foto Kader (Opsional)</label>
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Pratinjau" className="w-full h-full object-cover" />
+                  ) : (
+                    <Users className="w-8 h-8 text-slate-300" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 cursor-pointer transition-all w-fit">
+                    <Upload className="w-4 h-4 text-slate-500" />
+                    {photoFile ? photoFile.name : 'Ganti Foto'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-[10px] text-slate-400 mt-1.5">
+                    Format JPG, PNG, atau WEBP. Maksimal 5 MB. Biarkan kosong untuk menyimpan foto yang sudah ada.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 

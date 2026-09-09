@@ -22,6 +22,7 @@ export default function Finances({ activeOrg, settings = {} }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState(''); // 'income' or 'expense'
+  const [monthFilter, setMonthFilter] = useState(''); // 'YYYY-MM'
   const [search, setSearch] = useState('');
 
   // Modals
@@ -46,6 +47,7 @@ export default function Finances({ activeOrg, settings = {} }) {
       const res = await api.getFinances({
         org: activeOrg,
         type: typeFilter,
+        month: monthFilter,
         search
       });
       setFinances(res.data || []);
@@ -59,7 +61,7 @@ export default function Finances({ activeOrg, settings = {} }) {
 
   useEffect(() => {
     loadFinances();
-  }, [activeOrg, typeFilter, search]);
+  }, [activeOrg, typeFilter, monthFilter, search]);
 
   const handleOpenAdd = (defaultType = 'income') => {
     setFormData({
@@ -203,8 +205,18 @@ export default function Finances({ activeOrg, settings = {} }) {
           />
         </div>
 
-        {/* Filter Type Pills */}
+        {/* Filter Type Pills & Month */}
         <div className="flex items-center gap-2">
+          <div className="relative">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="month"
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="pl-8 pr-3 py-1.5 text-xs bg-slate-100 rounded-xl border border-slate-200 text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
           <button
             onClick={() => setTypeFilter('')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
@@ -350,7 +362,7 @@ export default function Finances({ activeOrg, settings = {} }) {
                 <>
                   <option value="Iuran Rutin Anggota">Iuran Rutin Anggota / Selapanan</option>
                   <option value="Koin Pelajar NU">Koin Pelajar NU (Iuran Sukarela)</option>
-                  <option value="Bantuan Ranting NU / Desa">Bantuan Pemerintah Desa / Ranting NU</option>
+                  <option value="Bantuan Ranting NU / Kelurahan">Bantuan Pemerintah Kelurahan / Ranting NU</option>
                   <option value="Sumbangan Donatur / Alumni">Sumbangan Donatur / Alumni</option>
                   <option value="Usaha Mandiri / Merchandise">Usaha Mandiri (Stiker, Kaos, Kalender)</option>
                   <option value="Lainnya">Pemasukan Lainnya</option>
@@ -437,9 +449,9 @@ export default function Finances({ activeOrg, settings = {} }) {
               <h3 className="font-extrabold text-base uppercase text-slate-900">
                 LAPORAN KEUANGAN KAS ORGANISASI
               </h3>
-              <h4 className="font-bold text-xs uppercase text-emerald-800 mt-0.5">
-                PIMPINAN RANTING IPNU - IPPNU DESA {settings.villageName ? settings.villageName.toUpperCase() : 'SUKAMAJU'}
-              </h4>
+<h4 className="font-bold text-xs uppercase text-emerald-800 mt-0.5">
+                    PIMPINAN RANTING IPNU - IPPNU KELURAHAN {settings.villageName ? settings.villageName.toUpperCase() : 'KALIBAROS'}
+                  </h4>
               <p className="text-[10px] text-slate-500">Masa Khidmat {settings.period || '2025 - 2027'}</p>
             </div>
 
@@ -496,7 +508,7 @@ export default function Finances({ activeOrg, settings = {} }) {
                 <p className="font-bold underline">{settings.leaderIpnu || 'Ahmad Fauzi'}</p>
               </div>
               <div>
-                <p>{settings.villageName || 'Sukamaju'}, {formatDate(new Date().toISOString())}</p>
+                <p>{settings.villageName || 'Kalibaros'}, {formatDate(new Date().toISOString())}</p>
                 <p className="font-semibold mt-1">Bendahara Mandataris</p>
                 <div className="h-16" />
                 <p className="font-bold underline">{settings.treasurerIpnu || 'Bagus Setiawan'}</p>

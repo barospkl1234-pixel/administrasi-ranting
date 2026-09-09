@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
   const db = readDB();
   let list = db.finances || [];
-  const { org, type, search } = req.query;
+  const { org, type, search, month } = req.query;
 
   if (org && org !== 'ALL') {
     list = list.filter(f => f.organization === org);
@@ -23,9 +23,18 @@ router.get('/', (req, res) => {
       (f.receiptNo && f.receiptNo.toLowerCase().includes(q))
     );
   }
+  if (month) {
+    list = list.filter(f => f.date && f.date.startsWith(month));
+  }
 
-  // Calculate balances
-  const allFinances = db.finances || [];
+  // Calculate balances (filtered by same params)
+  let summaryList = db.finances || [];
+  if (org && org !== 'ALL') {
+    summaryList = summaryList.filter(f => f.organization === org);
+  }
+  if (month) {
+    summaryList = summaryList.filter(f => f.date && f.date.startsWith(month));
+  }
   const summary = {
     ipnuIncome: 0,
     ipnuExpense: 0,
@@ -39,7 +48,7 @@ router.get('/', (req, res) => {
     totalBalance: 0
   };
 
-  allFinances.forEach(item => {
+  summaryList.forEach(item => {
     const amt = Number(item.amount) || 0;
     if (item.organization === 'IPNU') {
       if (item.type === 'income') summary.ipnuIncome += amt;

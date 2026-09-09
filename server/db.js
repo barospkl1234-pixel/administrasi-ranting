@@ -9,12 +9,12 @@ const DATA_FILE = path.join(__dirname, 'data', 'store.json');
 // Initial seed data with rich, realistic default content
 const DEFAULT_STORE = {
   settings: {
-    villageName: "Sukamaju",
-    subDistrict: "Cilongok",
-    district: "Banyumas",
+    villageName: "Kalibaros",
+    subDistrict: "Pekalongan Timur",
+    district: "Kota Pekalongan",
     province: "Jawa Tengah",
-    postCode: "53162",
-    secretariatAddress: "Gedung Bersama MWCNU / Masjid Jami' Baiturrohim, Jl. Raya Sukamaju No. 19",
+    postCode: "51128",
+    secretariatAddress: "Sekretariat Bersama PR IPNU IPPNU, Kel. Kalibaros, Kec. Pekalongan Timur, Kota Pekalongan",
     period: "2025 - 2027",
     codeIpnu: "7354",
     codeIppnu: "7455",
@@ -27,7 +27,7 @@ const DEFAULT_STORE = {
     cbpCommander: "Komandan Ilham Prasetyo",
     kppCommander: "Komandan Putri Ayu",
     phoneContact: "0812-3456-7890",
-    emailContact: "pripnuippnu.sukamaju@gmail.com"
+    emailContact: "ipnuippnubaros@gmail.com"
   },
   members: [
     {
@@ -36,7 +36,7 @@ const DEFAULT_STORE = {
       name: "Ahmad Fauzi",
       organization: "IPNU",
       gender: "L",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2004-03-12",
       phone: "081223344551",
       dusun: "Dusun I Krajan",
@@ -55,7 +55,7 @@ const DEFAULT_STORE = {
       name: "Siti Nur Halizah",
       organization: "IPPNU",
       gender: "P",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2004-08-15",
       phone: "081223344552",
       dusun: "Dusun II Karanganyar",
@@ -74,7 +74,7 @@ const DEFAULT_STORE = {
       name: "Muhammad Rifqi",
       organization: "IPNU",
       gender: "L",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2005-11-09",
       phone: "081223344553",
       dusun: "Dusun I Krajan",
@@ -93,7 +93,7 @@ const DEFAULT_STORE = {
       name: "Dewi Lestari",
       organization: "IPPNU",
       gender: "P",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2005-04-14",
       phone: "081223344554",
       dusun: "Dusun III Gunungwetan",
@@ -112,7 +112,7 @@ const DEFAULT_STORE = {
       name: "Bagus Setiawan",
       organization: "IPNU",
       gender: "L",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2004-07-17",
       phone: "081223344555",
       dusun: "Dusun II Karanganyar",
@@ -131,7 +131,7 @@ const DEFAULT_STORE = {
       name: "Anisa Rahmawati",
       organization: "IPPNU",
       gender: "P",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2005-09-21",
       phone: "081223344556",
       dusun: "Dusun I Krajan",
@@ -150,7 +150,7 @@ const DEFAULT_STORE = {
       name: "Ilham Prasetyo",
       organization: "IPNU",
       gender: "L",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2003-01-24",
       phone: "081223344557",
       dusun: "Dusun III Gunungwetan",
@@ -169,7 +169,7 @@ const DEFAULT_STORE = {
       name: "Putri Ayu",
       organization: "IPPNU",
       gender: "P",
-      pob: "Banyumas",
+      pob: "Pekalongan",
       dob: "2004-02-28",
       phone: "081223344558",
       dusun: "Dusun II Karanganyar",
@@ -193,7 +193,7 @@ const DEFAULT_STORE = {
       subject: "Permohonan Peminjaman Tempat & Sound System Gedung TPQ",
       recipientOrSender: "Pengurus Ta'mir Masjid & TPQ Baiturrohim",
       date: "2026-08-10",
-      content: "Sehubungan dengan akan dilaksanakannya peringatan Harlah IPNU IPPNU Ranting Sukamaju, kami bermaksud meminjam tempat aula gedung TPQ.",
+      content: "Sehubungan dengan akan dilaksanakannya peringatan Harlah IPNU IPPNU Ranting Kalibaros, kami bermaksud meminjam tempat aula gedung TPQ.",
       status: "Terkirim",
       signatory: "Ketua & Sekretaris IPNU"
     },
@@ -204,7 +204,7 @@ const DEFAULT_STORE = {
       type: "Keluar",
       category: "A", // Internal
       subject: "Undangan Pertemuan Rutin Selapanan Rekanita Diba'iyah",
-      recipientOrSender: "Seluruh Kader Rekanita IPPNU Sukamaju",
+      recipientOrSender: "Seluruh Kader Rekanita IPPNU Kalibaros",
       date: "2026-08-15",
       content: "Mengharap kehadiran rekanita dalam rutinan selapanan Ahad Kliwon bertempat di Kediaman Rekanita Siti Nur Halizah.",
       status: "Terkirim",
@@ -217,9 +217,9 @@ const DEFAULT_STORE = {
       type: "Keluar",
       category: "B", // Eksternal
       subject: "Permohonan Bantuan Dana & Partisipasi Kegiatan Makesta 2026",
-      recipientOrSender: "Kepala Desa Sukamaju",
+      recipientOrSender: "Lurah Kalibaros",
       date: "2026-08-20",
-      content: "Dalam rangka kaderisasi formal Masa Kesetiaan Anggota (MAKESTA) Pimpinan Ranting IPNU IPPNU Desa Sukamaju, kami mengajukan permohonan sponsor & dukungan.",
+      content: "Dalam rangka kaderisasi formal Masa Kesetiaan Anggota (MAKESTA) Pimpinan Ranting IPNU IPPNU Kelurahan Kalibaros, kami mengajukan permohonan sponsor & dukungan.",
       status: "Terkirim",
       signatory: "Ketua Panitia & Pembina"
     },
@@ -229,8 +229,8 @@ const DEFAULT_STORE = {
       organization: "IPNU",
       type: "Masuk",
       category: "A",
-      subject: "Instruksi Pelaksanaan Turba (Turun ke Bawah) PAC Cilongok",
-      recipientOrSender: "PAC IPNU Cilongok",
+      subject: "Instruksi Pelaksanaan Turba (Turun ke Bawah) PAC Pekalongan Timur",
+      recipientOrSender: "PAC IPNU Pekalongan Timur",
       date: "2026-08-25",
       content: "Pemberitahuan jadwal kunjungan silaturahmi kerja dan supervisi administrasi ranting semester II.",
       status: "Diarsipkan",
@@ -265,7 +265,7 @@ const DEFAULT_STORE = {
       type: "income",
       category: "Bantuan Ranting NU / Desa",
       amount: 1000000,
-      description: "Stimulan dana kepemudaan dari Pemerintah Desa Sukamaju",
+      description: "Stimulan dana kepemudaan dari Pemerintah Kelurahan Kalibaros",
       receiptNo: "KAS-IN-003"
     },
     {
@@ -314,13 +314,13 @@ const DEFAULT_STORE = {
     },
     {
       id: "EVT-002",
-      title: "Masa Kesetiaan Anggota (MAKESTA) Ranting Sukamaju",
+      title: "Masa Kesetiaan Anggota (MAKESTA) Ranting Kalibaros",
       organization: "BERSAMA",
       date: "2026-10-03",
       time: "08:00 - Selesai (2 Hari)",
-      location: "MI Ma'arif NU Sukamaju",
+      location: "Sekretariat PR IPNU IPPNU Kalibaros",
       pic: "Rekan Muhammad Rifqi",
-      description: "Kaderisasi tingkat dasar untuk pelajar SMP/MTs, SMA/MA dan pemuda desa se-Desa Sukamaju. Target 60 kader baru.",
+      description: "Kaderisasi tingkat dasar untuk pelajar SMP/MTs, SMA/MA dan pemuda se-Kelurahan Kalibaros. Target 60 kader baru.",
       status: "Tahap Persiapan",
       attendees: []
     },
@@ -330,9 +330,9 @@ const DEFAULT_STORE = {
       organization: "BERSAMA",
       date: "2026-08-17",
       time: "08:00 - 12:00 WIB",
-      location: "Balai Desa Sukamaju",
+      location: "Balai Kelurahan Kalibaros",
       pic: "Komandan Ilham Prasetyo",
-      description: "Peringatan HUT RI dan aksi kemanusiaan bersama PMI Banyumas.",
+      description: "Peringatan HUT RI dan aksi kemanusiaan bersama PMI Kota Pekalongan.",
       status: "Selesai",
       attendees: ["KDR-001", "KDR-002", "KDR-007", "KDR-008"]
     }
@@ -369,7 +369,7 @@ const DEFAULT_STORE = {
       unit: "Set",
       condition: "Baik",
       location: "Meja Sekretaris",
-      notes: "Stempel kayu bulat tulisan PR IPNU Sukamaju"
+      notes: "Stempel kayu bulat tulisan PR IPNU Kalibaros"
     },
     {
       id: "INV-004",
@@ -380,7 +380,7 @@ const DEFAULT_STORE = {
       unit: "Set",
       condition: "Baik",
       location: "Meja Sekretaris",
-      notes: "Stempel kayu bulat tulisan PR IPPNU Sukamaju"
+      notes: "Stempel kayu bulat tulisan PR IPPNU Kalibaros"
     },
     {
       id: "INV-005",

@@ -55,7 +55,7 @@ router.post('/', (req, res) => {
     name: req.body.name,
     organization: req.body.organization || 'IPNU',
     gender: req.body.gender || (req.body.organization === 'IPNU' ? 'L' : 'P'),
-    pob: req.body.pob || 'Banyumas',
+    pob: req.body.pob || 'Pekalongan',
     dob: req.body.dob || '2005-01-01',
     phone: req.body.phone || '',
     dusun: req.body.dusun || 'Dusun I Krajan',

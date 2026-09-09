@@ -77,6 +77,17 @@ router.post('/', (req, res) => {
   const nextNum = letters.length + 1;
   const newId = `LTR-${String(nextNum).padStart(3, '0')}`;
 
+  const extraFields = [
+    'template', 'dept', 'eventName', 'eventDayDate', 'eventTime', 'eventLocation',
+    'greetingCall', 'committeeChairman', 'committeeSecretary', 'chairmanIpnu', 'chairmanIppnu',
+    'raEdition', 'kopLine1', 'kopLine2', 'kopLine3', 'kopAddress', 'kopContact', 'kopEmail',
+    'notes', 'letterPlace', 'attachment'
+  ];
+  const extras = {};
+  extraFields.forEach(key => {
+    if (req.body[key] !== undefined) extras[key] = req.body[key];
+  });
+
   const newLetter = {
     id: newId,
     letterNumber: req.body.letterNumber || generateLetterNumber(req.body.organization || 'IPNU', req.body.category || 'A', req.body.dept || 'Sek', db),
@@ -89,7 +100,8 @@ router.post('/', (req, res) => {
     content: req.body.content || '',
     status: req.body.status || (req.body.type === 'Masuk' ? 'Diarsipkan' : 'Terkirim'),
     signatory: req.body.signatory || 'Ketua & Sekretaris',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    ...extras
   };
 
   letters.unshift(newLetter);
@@ -97,6 +109,47 @@ router.post('/', (req, res) => {
   writeDB(db);
 
   res.status(201).json({ success: true, data: newLetter, message: 'Surat berhasil dicatat/diterbitkan' });
+});
+
+// IMPORT Surat Masuk (Gambar/PDF sebagai lampiran base64)
+router.post('/import', (req, res) => {
+  const db = readDB();
+  const letters = db.letters || [];
+  const { items = [] } = req.body;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ success: false, message: 'Tidak ada file surat yang dipilih untuk diimport' });
+  }
+
+  const created = [];
+  items.forEach((item, idx) => {
+    const nextNum = letters.length + created.length + 1;
+    const id = `LTR-${String(nextNum).padStart(3, '0')}`;
+    const letter = {
+      id,
+      letterNumber: (item.letterNumber && item.letterNumber.trim()) || `SM-${String(nextNum).padStart(3, '0')}`,
+      organization: item.organization || 'BERSAMA',
+      type: 'Masuk',
+      category: item.category || 'A',
+      subject: (item.subject && item.subject.trim()) || (item.attachment && item.attachment.name) || 'Surat Masuk',
+      recipientOrSender: item.recipientOrSender ? item.recipientOrSender.trim() : '',
+      date: item.date || new Date().toISOString().split('T')[0],
+      content: item.content || '',
+      status: 'Diarsipkan',
+      signatory: 'Ketua & Sekretaris',
+      notes: item.notes || '',
+      attachment: item.attachment && item.attachment.dataUrl
+        ? { name: item.attachment.name || 'lampiran', type: item.attachment.type, dataUrl: item.attachment.dataUrl, size: item.attachment.size }
+        : undefined,
+      createdAt: new Date().toISOString(),
+    };
+    created.push(letter);
+  });
+
+  db.letters = [...created, ...letters];
+  writeDB(db);
+
+  res.status(201).json({ success: true, data: created, message: `${created.length} surat masuk berhasil diimport` });
 });
 
 // DELETE letter
