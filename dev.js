@@ -6,17 +6,13 @@ const npmCmd = isWin ? 'npm.cmd' : 'npm';
 
 console.log('🌟 Menjalankan Sistem Administrasi IPNU IPPNU Ranting Desa...\n');
 
-// Start backend
-const server = spawn('node', ['server/index.js'], { stdio: 'inherit', shell: true });
-const server = spawn('node', ['server/index.js'], { stdio: 'inherit', shell: isWin });
+// Start backend (API + uploads on http://localhost:5000)
+const server = spawn(process.execPath, ['server/index.js'], { stdio: 'inherit' });
 
-// Start frontend
-const client = spawn(npmCmd, ['run', 'dev', '--prefix', 'client'], { stdio: 'inherit', shell: true });
-// Start frontend (use npm.cmd on Windows)
-const client = spawn(isWin ? 'npm.cmd' : 'npm', ['run', 'dev'], {
-  stdio: 'inherit',
-  cwd: path.resolve('client')
-});
+// Start frontend (Vite dev server on http://localhost:5173, proxy /api -> :5000)
+const client = isWin
+  ? spawn('cmd.exe', ['/c', 'npm run dev'], { stdio: 'inherit', cwd: path.resolve('client') })
+  : spawn(npmCmd, ['run', 'dev'], { stdio: 'inherit', cwd: path.resolve('client') });
 
 function cleanup() {
   console.log('\n🛑 Menghentikan server...');
@@ -27,4 +23,3 @@ function cleanup() {
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
-
