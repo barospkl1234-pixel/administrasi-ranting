@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { initDB, readDB } from './db.js';
 
 import membersRouter from './routes/members.js';
@@ -16,10 +17,19 @@ import settingsRouter from './routes/settings.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Uploads directory for member photos
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Uploads directory for member photos (fallback to tmp on read-only filesystems like Vercel)
+const defaultUploadDir = path.join(__dirname, 'uploads');
+let uploadDir = defaultUploadDir;
+try {
+  fs.accessSync(__dirname, fs.constants.W_OK);
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch {
+  uploadDir = process.env.TMPDIR || os.tmpdir();
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 }
 
 // Multer config for photo uploads
@@ -193,7 +203,13 @@ app.use((err, req, res, next) => {
   next();
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 SIAD IPNU IPPNU Server running on http://localhost:${PORT}`);
-});
+export const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isDirectRun) {
+  app.listen(PORT, () => {
+    console.log(`🚀 SIAD IPNU IPPNU Server running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
 

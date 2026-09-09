@@ -1,10 +1,24 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_FILE = path.join(__dirname, 'data', 'store.json');
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'store.json');
+
+// Writable target for the database file. On read-only filesystems
+// (e.g. Vercel serverless functions) fall back to a writable temp dir.
+function getWritableFile() {
+  try {
+    fs.accessSync(DATA_DIR, fs.constants.W_OK);
+    return DATA_FILE;
+  } catch {
+    const tmp = process.env.TMPDIR || os.tmpdir();
+    return path.join(tmp, 'siad-store.json');
+  }
+}
 
 // Initial seed data with rich, realistic default content
 const DEFAULT_STORE = {
@@ -420,13 +434,14 @@ const DEFAULT_STORE = {
 
 // Ensure data directory exists and initialize store
 export function initDB() {
-  const dir = path.dirname(DATA_FILE);
+  const target = getWritableFile();
+  const dir = path.dirname(target);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_STORE, null, 2), 'utf-8');
+  if (!fs.existsSync(target)) {
+    fs.writeFileSync(target, JSON.stringify(DEFAULT_STORE, null, 2), 'utf-8');
   }
 }
 
@@ -434,10 +449,16 @@ export function initDB() {
 export function readDB() {
   try {
     initDB();
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+    const raw = fs.readFileSync(getWritableFile(), 'utf-8');
     return JSON.parse(raw);
   } catch (err) {
     console.error('Error reading DB:', err);
+  }
+  try {
+    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err2) {
+    console.error('Error reading seeded DB:', err2);
     return DEFAULT_STORE;
   }
 }
@@ -446,9 +467,9 @@ export function readDB() {
 export function writeDB(data) {
   try {
     initDB();
-    const tempFile = `${DATA_FILE}.tmp`;
+    const tempFile = `${getWritableFile()}.tmp`;
     fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-    fs.renameSync(tempFile, DATA_FILE);
+    fs.renameSync(tempFile, getWritableFile());
     return true;
   } catch (err) {
     console.error('Error writing DB:', err);
