@@ -545,46 +545,47 @@ export default function Letters({ activeOrg, settings = {} }) {
             {/* Print Container: Real Paper Emulation */}
             <div className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 font-sans text-xs leading-relaxed max-w-[800px] mx-auto">
               
-              {/* KOP SURAT RESMI - Logo Resmi IPNU & IPPNU (Kongres 2018) */}
-              <div className="border-b-4 border-double border-slate-800 pb-3 mb-6">
-                <div className="flex items-start gap-5">
-                  {/* Left: Logos IPNU & IPPNU */}
-                  <div className="flex items-center gap-2 self-center shrink-0">
-                    <div className="w-[3cm] h-[3cm] flex items-center justify-center bg-white">
-                      <img
-                        src="/logo-ipnu.png"
-                        alt="Logo IPNU"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <div className="w-[3cm] h-[3cm] flex items-center justify-center bg-white">
-                      <img
-                        src="/logo-ippnu.png"
-                        alt="Logo IPPNU"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  </div>
+              {/* KOP SURAT RESMI - Format mengikuti contoh PAN-UNDANGAN RA */}
+              <div className="relative border-b-4 border-double border-slate-800 pb-3 mb-6">
+                {/* Logo IPNU (kiri, 3x3 cm) */}
+                <img
+                  src="/logo-ipnu.png"
+                  alt="Logo IPNU"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3cm] h-[3cm] object-contain"
+                />
+                {/* Logo IPPNU (kanan, 3x3 cm) */}
+                <img
+                  src="/logo-ippnu.png"
+                  alt="Logo IPPNU"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[3cm] h-[3cm] object-contain"
+                />
 
-                  {/* Right: Teks Kop Rata Kanan - Arial Narrow 11 */}
-                  <div className="flex-1 text-right space-y-0.5" style={{ fontFamily: "'Arial Narrow', Arial, sans-serif", fontSize: '11px' }}>
-                    <h5 className="font-bold tracking-widest text-slate-600 uppercase">
-                      PIMPINAN RANTING
-                    </h5>
-                    <h3 className="font-black tracking-tight text-emerald-900 uppercase leading-snug">
-                      {selectedLetter.organization === 'IPNU' 
-                        ? 'IKATAN PELAJAR NAHDLATUL ULAMA' 
-                        : selectedLetter.organization === 'IPPNU'
-                        ? 'IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'
-                        : 'IKATAN PELAJAR & IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'}
-                    </h3>
-                    <h4 className="font-extrabold uppercase text-slate-800">
-                      DESA {settings.villageName ? settings.villageName.toUpperCase() : 'SUKAMAJU'} KECAMATAN {settings.subDistrict ? settings.subDistrict.toUpperCase() : 'CILONGOK'}
-                    </h4>
-                    <p className="text-slate-500">
-                      {settings.secretariatAddress || "Sekretariat: Gedung MWCNU Sukamaju"} • Telp/WA: {settings.phoneContact || '0812-3456-7890'}
-                    </p>
-                  </div>
+                {/* Teks Kop tengah, rata kanan */}
+                <div
+                  className="text-right px-[3.4cm]"
+                  style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                >
+                  <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '14px' }}>
+                    {selectedLetter.organization === 'IPNU'
+                      ? 'PIMPINAN RANTING IKATAN PELAJAR NAHDLATUL ULAMA'
+                      : selectedLetter.organization === 'IPPNU'
+                      ? 'PIMPINAN RANTING IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'
+                      : 'PIMPINAN RANTING IPNU DAN IPPNU'}
+                  </p>
+                  <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '14px' }}>
+                    {settings.villageName ? settings.villageName.toUpperCase() : 'SUKAMAJU'} KELURAHAN/KECAMATAN {settings.subDistrict ? settings.subDistrict.toUpperCase() : 'CILONGOK'}
+                  </p>
+                  <p className="font-bold mt-1" style={{ fontSize: '9.5px', color: '#000000' }}>
+                    {settings.secretariatAddress || "Sekretariat: Gedung MWCNU Sukamaju"}
+                  </p>
+                  <p className="font-bold" style={{ fontSize: '9.5px', color: '#000000' }}>
+                    <span>{settings.phoneContact || '0812-3456-7890'}</span>{' '}
+                    <img src="/icon-telp.png" alt="Telp" className="inline-block w-[11px] h-[11px] align-middle" />
+                  </p>
+                  <p className="font-bold" style={{ fontSize: '9.5px' }}>
+                    <span className="text-[#0000FF] underline">{settings.emailContact || 'pripnuippnu.sukamaju@gmail.com'}</span>{' '}
+                    <img src="/icon-email.png" alt="Email" className="inline-block w-[11px] h-[11px] align-middle" />
+                  </p>
                 </div>
               </div>
 
