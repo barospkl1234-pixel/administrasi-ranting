@@ -22,7 +22,7 @@ router.get('/', (req, res) => {
     const q = search.toLowerCase();
     list = list.filter(m => 
       m.name.toLowerCase().includes(q) || 
-      (m.nik && m.nik.includes(q)) || 
+      (m.studentStatus && m.studentStatus.toLowerCase().includes(q)) || 
       (m.position && m.position.toLowerCase().includes(q))
     );
   }
@@ -51,7 +51,7 @@ router.post('/', (req, res) => {
 
   const newMember = {
     id: newId,
-    nik: req.body.nik || '',
+    studentStatus: req.body.studentStatus || 'SMA',
     name: req.body.name,
     organization: req.body.organization || 'IPNU',
     gender: req.body.gender || (req.body.organization === 'IPNU' ? 'L' : 'P'),

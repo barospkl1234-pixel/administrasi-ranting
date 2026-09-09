@@ -2,6 +2,7 @@
   "name": "administrasi-ipnu-ippnu",
   "version": "1.0.0",
   "description": "Sistem Administrasi Pimpinan Ranting (PR) IPNU IPPNU Desa",
+  "type": "module",
   "main": "server/index.js",
   "scripts": {
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",

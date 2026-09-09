@@ -41,7 +41,7 @@ export default function Members({ activeOrg, settings = {} }) {
     name: '',
     organization: activeOrg === 'ALL' ? 'IPNU' : activeOrg,
     gender: activeOrg === 'IPPNU' ? 'P' : 'L',
-    nik: '',
+    studentStatus: 'SMA',
     pob: 'Pekalongan',
     dob: '2005-01-01',
     phone: '',
@@ -170,9 +170,9 @@ export default function Members({ activeOrg, settings = {} }) {
   const exportToCSV = () => {
     if (members.length === 0) return alert('Tidak ada data untuk diekspor');
 
-    const headers = ['ID,NIK,Nama,Organisasi,Jenis Kelamin,Dusun,RT,RW,No HP,Jabatan,Jenjang Kaderisasi,Status'];
+    const headers = ['ID,Status Pelajar,Nama,Organisasi,Jenis Kelamin,Dusun,RT,RW,No HP,Jabatan,Jenjang Kaderisasi,Status'];
     const rows = members.map(m => 
-      `"${m.id}","'${m.nik}'","${m.name}","${m.organization}","${m.gender}","${m.dusun}","${m.rt}","${m.rw}","'${m.phone}'","${m.position}","${m.cadreLevel}","${m.status}"`
+      `"${m.id}","${m.studentStatus || '-'}","${m.name}","${m.organization}","${m.gender}","${m.dusun}","${m.rt}","${m.rw}","'${m.phone}'","${m.position}","${m.cadreLevel}","${m.status}"`
     );
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers, ...rows].join("\n");
@@ -195,7 +195,7 @@ export default function Members({ activeOrg, settings = {} }) {
             Database Kader & Anggota
           </h2>
           <p className="text-xs text-slate-500">
-            Pencatatan data kader formal, pencarian NIK/NIA, dan pencetakan KTA Digital
+            Pencatatan data kader formal, status pelajar/kerja, dan pencetakan KTA Digital
           </p>
         </div>
 
@@ -225,7 +225,7 @@ export default function Members({ activeOrg, settings = {} }) {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Cari nama, NIK, atau jabatan..."
+            placeholder="Cari nama, status, atau jabatan..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
@@ -323,7 +323,7 @@ export default function Members({ activeOrg, settings = {} }) {
                           />
                           <div>
                             <p className="font-bold text-slate-800 text-sm">{m.name}</p>
-                            <p className="text-[11px] font-mono text-slate-400">{m.id} • NIK: {m.nik || '-'}</p>
+                            <p className="text-[11px] font-mono text-slate-400">{m.id} • {m.studentStatus || '-'}</p>
                           </div>
                         </div>
                       </td>
@@ -511,15 +511,18 @@ export default function Members({ activeOrg, settings = {} }) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">NIK (16 Digit)</label>
-              <input
-                type="text"
-                maxLength={16}
-                value={formData.nik}
-                onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
-                placeholder="330215..."
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
-              />
+              <label className="block text-xs font-bold text-slate-700 mb-1">Status Pelajar *</label>
+              <select
+                value={formData.studentStatus}
+                onChange={(e) => setFormData({ ...formData, studentStatus: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 font-semibold"
+                required
+              >
+                <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                <option value="SMA">SMA / SMK / MA (Sekolah Menengah Atas)</option>
+                <option value="Kuliah">Kuliah / Mahasiswa</option>
+                <option value="Kerja">Sudah Bekerja</option>
+              </select>
             </div>
 
             <div>
@@ -681,14 +684,18 @@ export default function Members({ activeOrg, settings = {} }) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">NIK (16 Digit)</label>
-              <input
-                type="text"
-                maxLength={16}
-                value={formData.nik}
-                onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 font-mono"
-              />
+              <label className="block text-xs font-bold text-slate-700 mb-1">Status Pelajar *</label>
+              <select
+                value={formData.studentStatus}
+                onChange={(e) => setFormData({ ...formData, studentStatus: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 font-semibold"
+                required
+              >
+                <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                <option value="SMA">SMA / SMK / MA (Sekolah Menengah Atas)</option>
+                <option value="Kuliah">Kuliah / Mahasiswa</option>
+                <option value="Kerja">Sudah Bekerja</option>
+              </select>
             </div>
 
             <div>

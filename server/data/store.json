@@ -61,25 +61,6 @@
       "photo": "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80"
     },
     {
-      "id": "KDR-004",
-      "nik": "3302155404050004",
-      "name": "Dewi Lestari",
-      "organization": "IPPNU",
-      "gender": "P",
-      "pob": "Pekalongan",
-      "dob": "2005-04-14",
-      "phone": "081223344554",
-      "dusun": "Dusun III Gunungwetan",
-      "rt": "04",
-      "rw": "03",
-      "education": "SMA Negeri 1",
-      "position": "Sekretaris IPPNU",
-      "cadreLevel": "MAKESTA",
-      "status": "Aktif",
-      "joinedYear": 2022,
-      "photo": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80"
-    },
-    {
       "id": "KDR-005",
       "nik": "3302151707040005",
       "name": "Bagus Setiawan",
@@ -345,6 +326,32 @@
   ],
   "events": [
     {
+      "id": "EVT-004",
+      "title": "Rutinan Selapanan & Pembacaan Diba'iyah",
+      "organization": "BERSAMA",
+      "date": "2026-09-09",
+      "time": "19:30 WIB - Selesai",
+      "location": "Gedung TPQ",
+      "pic": "Rekan Ahmad Fauzi & Rekanita Siti",
+      "description": "Pembacaan maulid Simtudduror, dilanjutkan kajian fiqih dan koordinasi program kerja pengurus.",
+      "status": "Akan Datang",
+      "attendees": [],
+      "createdAt": "2026-09-09T11:01:28.254Z"
+    },
+    {
+      "id": "EVT-004",
+      "title": "Rutinan Selapanan & Pembacaan Diba'iyah",
+      "organization": "BERSAMA",
+      "date": "2026-09-09",
+      "time": "19:30 WIB - Selesai",
+      "location": "Gedung TPQ Baiturrohim Krajan",
+      "pic": "Rekan Ahmad Fauzi & Rekanita Siti",
+      "description": "Pembacaan maulid Simtudduror, dilanjutkan kajian fiqih dan koordinasi program kerja pengurus.",
+      "status": "Akan Datang",
+      "attendees": [],
+      "createdAt": "2026-09-09T11:01:08.035Z"
+    },
+    {
       "id": "EVT-001",
       "title": "Rutinan Selapanan & Kajian Fiqih Kepemudaan",
       "organization": "BERSAMA",
@@ -372,23 +379,15 @@
       "pic": "Rekan Muhammad Rifqi",
       "description": "Kaderisasi tingkat dasar untuk pelajar SMP/MTs, SMA/MA dan pemuda desa se-Kelurahan Kalibaros. Target 60 kader baru.",
       "status": "Tahap Persiapan",
-      "attendees": []
-    },
-    {
-      "id": "EVT-003",
-      "title": "Bakti Sosial & Donor Darah Korp CBP - KPP Ranting",
-      "organization": "BERSAMA",
-      "date": "2026-08-17",
-      "time": "08:00 - 12:00 WIB",
-      "location": "Balai Kelurahan Kalibaros",
-      "pic": "Komandan Ilham Prasetyo",
-      "description": "Peringatan HUT RI dan aksi kemanusiaan bersama PMI Kota Pekalongan.",
-      "status": "Selesai",
       "attendees": [
-        "KDR-001",
         "KDR-002",
+        "KDR-003",
+        "KDR-004",
+        "KDR-005",
+        "KDR-006",
         "KDR-007",
-        "KDR-008"
+        "KDR-008",
+        "KDR-010"
       ]
     }
   ],
