@@ -2,10 +2,11 @@ import express from 'express';
 import { readDB, writeDB } from '../db.js';
 
 const router = express.Router();
+const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
 
 // GET all inventory
-router.get('/', (req, res) => {
-  const db = readDB();
+router.get('/', wrap(async (req, res) => {
+  const db = await readDB();
   let list = db.inventory || [];
   const { category, condition, search } = req.query;
 
@@ -25,11 +26,11 @@ router.get('/', (req, res) => {
   }
 
   res.json({ success: true, data: list });
-});
+}));
 
 // CREATE inventory item
-router.post('/', (req, res) => {
-  const db = readDB();
+router.post('/', wrap(async (req, res) => {
+  const db = await readDB();
   const inventory = db.inventory || [];
 
   const nextNum = inventory.length + 1;
@@ -51,14 +52,14 @@ router.post('/', (req, res) => {
 
   inventory.push(newItem);
   db.inventory = inventory;
-  writeDB(db);
+  await writeDB(db);
 
   res.status(201).json({ success: true, data: newItem, message: 'Barang inventaris berhasil dicatat' });
-});
+}));
 
 // UPDATE inventory item
-router.put('/:id', (req, res) => {
-  const db = readDB();
+router.put('/:id', wrap(async (req, res) => {
+  const db = await readDB();
   const inventory = db.inventory || [];
   const index = inventory.findIndex(i => i.id === req.params.id);
 
@@ -75,14 +76,14 @@ router.put('/:id', (req, res) => {
 
   inventory[index] = updated;
   db.inventory = inventory;
-  writeDB(db);
+  await writeDB(db);
 
   res.json({ success: true, data: updated, message: 'Data inventaris berhasil diperbarui' });
-});
+}));
 
 // DELETE inventory item
-router.delete('/:id', (req, res) => {
-  const db = readDB();
+router.delete('/:id', wrap(async (req, res) => {
+  const db = await readDB();
   const inventory = db.inventory || [];
   const index = inventory.findIndex(i => i.id === req.params.id);
 
@@ -92,10 +93,9 @@ router.delete('/:id', (req, res) => {
 
   inventory.splice(index, 1);
   db.inventory = inventory;
-  writeDB(db);
+  await writeDB(db);
 
   res.json({ success: true, message: 'Barang berhasil dihapus' });
-});
+}));
 
 export default router;
-

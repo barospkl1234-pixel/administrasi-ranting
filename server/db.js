@@ -2,11 +2,48 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pg from 'pg';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'store.json');
+
+// ----- PostgreSQL storage (digunakan bila DATABASE_URL di-set) -----
+const usePostgres = !!process.env.DATABASE_URL;
+const STORE_KEYS = ['settings', 'members', 'letters', 'finances', 'events', 'inventory'];
+
+let _pool = null;
+function getPool() {
+  if (!usePostgres) return null;
+  if (!_pool) {
+    const config = { connectionString: process.env.DATABASE_URL };
+    if (String(process.env.DATABASE_SSL).toLowerCase() === 'false') {
+      config.ssl = false;
+    } else {
+      config.ssl = { rejectUnauthorized: false };
+    }
+    _pool = new pg.Pool(config);
+  }
+  return _pool;
+}
+
+async function ensurePgSchema(pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS siad_store (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS siad_uploads (
+      name TEXT PRIMARY KEY,
+      data BYTEA NOT NULL,
+      mime TEXT NOT NULL DEFAULT 'image/jpeg',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+}
 
 // Writable target for the database file. On read-only filesystems
 // (e.g. Vercel serverless functions) fall back to a writable temp dir.
@@ -432,8 +469,23 @@ const DEFAULT_STORE = {
   ]
 };
 
+// Seed data dari file store.json bila ada, fallback ke DEFAULT_STORE
+function getSeedStore() {
+  try {
+    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_STORE;
+  }
+}
+
 // Ensure data directory exists and initialize store
-export function initDB() {
+export async function initDB() {
+  if (usePostgres) {
+    await ensurePgSchema(getPool());
+    return;
+  }
+
   const target = getWritableFile();
   const dir = path.dirname(target);
   if (!fs.existsSync(dir)) {
@@ -446,9 +498,21 @@ export function initDB() {
 }
 
 // Read database
-export function readDB() {
+export async function readDB() {
+  if (usePostgres) {
+    const { rows } = await getPool().query('SELECT key, value FROM siad_store');
+    if (rows.length === 0) {
+      const seed = getSeedStore();
+      await writeDB(seed);
+      return seed;
+    }
+    const store = {};
+    rows.forEach(r => { store[r.key] = r.value; });
+    return store;
+  }
+
   try {
-    initDB();
+    await initDB();
     const raw = fs.readFileSync(getWritableFile(), 'utf-8');
     return JSON.parse(raw);
   } catch (err) {
@@ -464,9 +528,22 @@ export function readDB() {
 }
 
 // Atomic write to database
-export function writeDB(data) {
+export async function writeDB(data) {
+  if (usePostgres) {
+    const pool = getPool();
+    for (const key of STORE_KEYS) {
+      const value = data[key] === undefined ? (key === 'settings' ? {} : []) : data[key];
+      await pool.query(
+        `INSERT INTO siad_store (key, value) VALUES ($1, $2::jsonb)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [key, JSON.stringify(value)]
+      );
+    }
+    return true;
+  }
+
   try {
-    initDB();
+    await initDB();
     const tempFile = `${getWritableFile()}.tmp`;
     fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
     fs.renameSync(tempFile, getWritableFile());
@@ -476,4 +553,25 @@ export function writeDB(data) {
     return false;
   }
 }
+
+// Simpan file upload (foto) ke PostgreSQL. Return false bila pakai file-sistem.
+export async function saveUpload(name, buffer, mime) {
+  if (!usePostgres) return false;
+  await getPool().query(
+    `INSERT INTO siad_uploads (name, data, mime) VALUES ($1, $2, $3)
+     ON CONFLICT (name) DO UPDATE SET data = EXCLUDED.data, mime = EXCLUDED.mime, created_at = now()`,
+    [name, buffer, mime]
+  );
+  return true;
+}
+
+// Baca file upload dari PostgreSQL. Return null bila pakai file-sistem atau tidak ada.
+export async function readUpload(name) {
+  if (!usePostgres) return null;
+  const { rows } = await getPool().query('SELECT data, mime FROM siad_uploads WHERE name = $1', [name]);
+  if (rows.length === 0) return null;
+  return { buffer: rows[0].data, mime: rows[0].mime };
+}
+
+export { usePostgres };
 

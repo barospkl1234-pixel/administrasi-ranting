@@ -5,7 +5,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { initDB, readDB } from './db.js';
+import { initDB, readDB, saveUpload, readUpload, usePostgres } from './db.js';
 
 import membersRouter from './routes/members.js';
 import lettersRouter from './routes/letters.js';
@@ -33,14 +33,17 @@ try {
 }
 
 // Multer config for photo uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, unique);
-  }
-});
+function genFilename(originalname) {
+  const ext = path.extname(originalname).toLowerCase() || '.jpg';
+  return `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+}
+
+const storage = usePostgres
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (req, file, cb) => cb(null, uploadDir),
+      filename: (req, file, cb) => cb(null, genFilename(file.originalname))
+    });
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -59,23 +62,47 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Initialize database
-initDB();
+initDB().catch(err => console.error('DB init warning:', err.message));
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve uploaded photos statically
-app.use('/uploads', express.static(uploadDir));
+// Serve uploaded photos: dari PostgreSQL (persisten) atau folder statis (lokal)
+if (usePostgres) {
+  app.get('/uploads/:name', async (req, res) => {
+    try {
+      const file = await readUpload(req.params.name);
+      if (!file) {
+        return res.status(404).json({ success: false, message: 'Foto tidak ditemukan' });
+      }
+      res.setHeader('Content-Type', file.mime);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.send(file.buffer);
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+} else {
+  app.use('/uploads', express.static(uploadDir));
+}
 
 // Photo upload endpoint
-app.post('/api/upload', upload.single('photo'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: 'Tidak ada file foto yang diunggah' });
+app.post('/api/upload', upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Tidak ada file foto yang diunggah' });
+    }
+    const filename = usePostgres ? genFilename(req.file.originalname) : req.file.filename;
+    if (usePostgres) {
+      await saveUpload(filename, req.file.buffer, req.file.mimetype);
+    }
+    const url = `/uploads/${filename}`;
+    res.status(201).json({ success: true, url, message: 'Foto berhasil diunggah' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal menyimpan foto: ' + err.message });
   }
-  const url = `/uploads/${req.file.filename}`;
-  res.status(201).json({ success: true, url, message: 'Foto berhasil diunggah' });
 });
 
 // Health Check
@@ -88,13 +115,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // Dashboard Overview Aggregated Route
-app.get('/api/dashboard', (req, res) => {
-  const db = readDB();
-  const members = db.members || [];
-  const letters = db.letters || [];
-  const finances = db.finances || [];
-  const events = db.events || [];
-  const inventory = db.inventory || [];
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const db = await readDB();
+    const members = db.members || [];
+    const letters = db.letters || [];
+    const finances = db.finances || [];
+    const events = db.events || [];
+    const inventory = db.inventory || [];
 
   // Member stats
   const totalMembers = members.length;
@@ -169,6 +197,9 @@ app.get('/api/dashboard', (req, res) => {
       settings: db.settings
     }
   });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Mount Routes

@@ -2,10 +2,11 @@ import express from 'express';
 import { readDB, writeDB } from '../db.js';
 
 const router = express.Router();
+const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
 
 // GET financial transactions and summary balances
-router.get('/', (req, res) => {
-  const db = readDB();
+router.get('/', wrap(async (req, res) => {
+  const db = await readDB();
   let list = db.finances || [];
   const { org, type, search, month } = req.query;
 
@@ -72,11 +73,11 @@ router.get('/', (req, res) => {
   list.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   res.json({ success: true, data: list, summary });
-});
+}));
 
 // CREATE financial transaction
-router.post('/', (req, res) => {
-  const db = readDB();
+router.post('/', wrap(async (req, res) => {
+  const db = await readDB();
   const finances = db.finances || [];
 
   const nextNum = finances.length + 1;
@@ -98,14 +99,14 @@ router.post('/', (req, res) => {
 
   finances.unshift(newTransaction);
   db.finances = finances;
-  writeDB(db);
+  await writeDB(db);
 
   res.status(201).json({ success: true, data: newTransaction, message: 'Transaksi kas berhasil dicatat' });
-});
+}));
 
 // DELETE transaction
-router.delete('/:id', (req, res) => {
-  const db = readDB();
+router.delete('/:id', wrap(async (req, res) => {
+  const db = await readDB();
   const finances = db.finances || [];
   const index = finances.findIndex(f => f.id === req.params.id);
 
@@ -115,10 +116,9 @@ router.delete('/:id', (req, res) => {
 
   finances.splice(index, 1);
   db.finances = finances;
-  writeDB(db);
+  await writeDB(db);
 
   res.json({ success: true, message: 'Transaksi kas berhasil dihapus' });
-});
+}));
 
 export default router;
-

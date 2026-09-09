@@ -2,6 +2,7 @@ import express from 'express';
 import { readDB, writeDB } from '../db.js';
 
 const router = express.Router();
+const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
 
 const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
@@ -35,8 +36,8 @@ function generateLetterNumber(org, typeCategory, codeDept, db) {
 }
 
 // GET all letters
-router.get('/', (req, res) => {
-  const db = readDB();
+router.get('/', wrap(async (req, res) => {
+  const db = await readDB();
   let list = db.letters || [];
   const { org, type, search } = req.query;
 
@@ -59,19 +60,19 @@ router.get('/', (req, res) => {
   list.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   res.json({ success: true, data: list });
-});
+}));
 
 // GET generated letter number suggestion
-router.get('/generate-number', (req, res) => {
-  const db = readDB();
+router.get('/generate-number', wrap(async (req, res) => {
+  const db = await readDB();
   const { org = 'IPNU', category = 'A', dept = 'Sek' } = req.query;
   const suggestedNumber = generateLetterNumber(org, category, dept, db);
   res.json({ success: true, number: suggestedNumber });
-});
+}));
 
 // CREATE letter
-router.post('/', (req, res) => {
-  const db = readDB();
+router.post('/', wrap(async (req, res) => {
+  const db = await readDB();
   const letters = db.letters || [];
   
   const nextNum = letters.length + 1;
@@ -106,14 +107,14 @@ router.post('/', (req, res) => {
 
   letters.unshift(newLetter);
   db.letters = letters;
-  writeDB(db);
+  await writeDB(db);
 
   res.status(201).json({ success: true, data: newLetter, message: 'Surat berhasil dicatat/diterbitkan' });
-});
+}));
 
 // IMPORT Surat Masuk (Gambar/PDF sebagai lampiran base64)
-router.post('/import', (req, res) => {
-  const db = readDB();
+router.post('/import', wrap(async (req, res) => {
+  const db = await readDB();
   const letters = db.letters || [];
   const { items = [] } = req.body;
 
@@ -147,14 +148,14 @@ router.post('/import', (req, res) => {
   });
 
   db.letters = [...created, ...letters];
-  writeDB(db);
+  await writeDB(db);
 
   res.status(201).json({ success: true, data: created, message: `${created.length} surat masuk berhasil diimport` });
-});
+}));
 
 // DELETE letter
-router.delete('/:id', (req, res) => {
-  const db = readDB();
+router.delete('/:id', wrap(async (req, res) => {
+  const db = await readDB();
   const letters = db.letters || [];
   const index = letters.findIndex(l => l.id === req.params.id);
 
@@ -164,10 +165,9 @@ router.delete('/:id', (req, res) => {
 
   letters.splice(index, 1);
   db.letters = letters;
-  writeDB(db);
+  await writeDB(db);
 
   res.json({ success: true, message: 'Surat berhasil dihapus' });
-});
+}));
 
 export default router;
-

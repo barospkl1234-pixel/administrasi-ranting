@@ -2,10 +2,11 @@ import express from 'express';
 import { readDB, writeDB } from '../db.js';
 
 const router = express.Router();
+const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
 
 // GET all events
-router.get('/', (req, res) => {
-  const db = readDB();
+router.get('/', wrap(async (req, res) => {
+  const db = await readDB();
   let list = db.events || [];
   const { org, search } = req.query;
 
@@ -28,11 +29,11 @@ router.get('/', (req, res) => {
   }));
 
   res.json({ success: true, data: populated });
-});
+}));
 
 // CREATE event
-router.post('/', (req, res) => {
-  const db = readDB();
+router.post('/', wrap(async (req, res) => {
+  const db = await readDB();
   const events = db.events || [];
 
   const nextNum = events.length + 1;
@@ -54,14 +55,14 @@ router.post('/', (req, res) => {
 
   events.unshift(newEvent);
   db.events = events;
-  writeDB(db);
+  await writeDB(db);
 
   res.status(201).json({ success: true, data: newEvent, message: 'Agenda kegiatan berhasil ditambahkan' });
-});
+}));
 
 // TOGGLE member attendance in event
-router.post('/:id/attendance', (req, res) => {
-  const db = readDB();
+router.post('/:id/attendance', wrap(async (req, res) => {
+  const db = await readDB();
   const events = db.events || [];
   const event = events.find(e => e.id === req.params.id);
 
@@ -88,7 +89,7 @@ router.post('/:id/attendance', (req, res) => {
     isAttending = true;
   }
 
-  writeDB(db);
+  await writeDB(db);
 
   res.json({ 
     success: true, 
@@ -96,11 +97,11 @@ router.post('/:id/attendance', (req, res) => {
     attendeeCount: event.attendees.length,
     message: isAttending ? 'Presensi berhasil dicatat (Hadir)' : 'Status presensi dibatalkan' 
   });
-});
+}));
 
 // DELETE event
-router.delete('/:id', (req, res) => {
-  const db = readDB();
+router.delete('/:id', wrap(async (req, res) => {
+  const db = await readDB();
   const events = db.events || [];
   const index = events.findIndex(e => e.id === req.params.id);
 
@@ -110,10 +111,9 @@ router.delete('/:id', (req, res) => {
 
   events.splice(index, 1);
   db.events = events;
-  writeDB(db);
+  await writeDB(db);
 
   res.json({ success: true, message: 'Kegiatan berhasil dihapus' });
-});
+}));
 
 export default router;
-
