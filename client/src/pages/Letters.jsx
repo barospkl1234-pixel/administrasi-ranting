@@ -12,6 +12,7 @@ import {
   Inbox,
   CheckCircle,
   Copy,
+  Download,
   Eye,
   Megaphone,
   Upload,
@@ -70,6 +71,7 @@ export default function Letters({ activeOrg, settings = {} }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState(null);
+  const [viewerFile, setViewerFile] = useState(null);
 
   // Import Surat Masuk
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -255,6 +257,39 @@ export default function Letters({ activeOrg, settings = {} }) {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const openViewer = (l) => {
+    setViewerFile({
+      name: l.attachment.name || 'lampiran',
+      type: l.attachment.type,
+      dataUrl: l.attachment.dataUrl,
+      size: l.attachment.size,
+      letterNumber: l.letterNumber || '',
+      subject: l.subject || '',
+    });
+  };
+
+  const downloadDataUrl = async (dataUrl, filename) => {
+    try {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const fileToDataUrl = (file) =>
@@ -468,9 +503,9 @@ export default function Letters({ activeOrg, settings = {} }) {
                       <div className="flex items-center justify-center gap-1.5">
                         {l.attachment && l.attachment.dataUrl && (
                           <button
-                            onClick={() => window.open(l.attachment.dataUrl, '_blank')}
+                            onClick={() => openViewer(l)}
                             className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors"
-                            title={`Buka lampiran: ${l.attachment.name || 'surat'}`}
+                            title={`Lihat lampiran: ${l.attachment.name || 'surat'}`}
                           >
                             <Paperclip className="w-4 h-4" />
                           </button>
@@ -917,12 +952,24 @@ export default function Letters({ activeOrg, settings = {} }) {
               <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
                 {importItems.map((it) => (
                   <div key={it.key} className="flex items-start gap-3 p-3 bg-white">
-                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center">
+                    <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center group">
                       {it.fileType === 'application/pdf' ? (
                         <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[9px] font-black rounded">PDF</span>
                       ) : (
                         <img src={it.dataUrl} alt={it.fileName} className="w-full h-full object-cover" />
                       )}
+                      <button
+                        type="button"
+                        onClick={() => openViewer({
+                          attachment: { name: it.fileName, type: it.fileType, dataUrl: it.dataUrl, size: it.size },
+                          letterNumber: it.letterNumber || '',
+                          subject: it.subject || it.fileName,
+                        })}
+                        className="absolute inset-0 flex items-center justify-center bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                        title="Pratinjau file sebelum import"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
                       <div>
@@ -1000,6 +1047,67 @@ export default function Letters({ activeOrg, settings = {} }) {
             </p>
           )}
         </form>
+      </Modal>
+
+      {/* MODAL: LIHAT LAMPIRAN FILE (GAMBAR / PDF) */}
+      <Modal
+        isOpen={!!viewerFile}
+        onClose={() => setViewerFile(null)}
+        title="Lihat Lampiran Surat"
+        maxWidth="max-w-5xl"
+      >
+        {viewerFile && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+              <div className="text-xs space-y-0.5 min-w-0">
+                <p className="font-bold text-slate-800 truncate">{viewerFile.name}</p>
+                <p className="text-slate-500 truncate">
+                  {viewerFile.letterNumber ? `No. ${viewerFile.letterNumber} · ` : ''}
+                  {viewerFile.subject}
+                </p>
+                <p className="text-slate-400">
+                  {viewerFile.type}
+                  {viewerFile.size ? ` · ${(viewerFile.size / 1024).toFixed(1)} KB` : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={viewerFile.dataUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Buka di Tab Baru
+                </a>
+                <button
+                  onClick={() => downloadDataUrl(viewerFile.dataUrl, viewerFile.name)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Unduh
+                </button>
+              </div>
+            </div>
+            <div className="bg-slate-100 rounded-xl overflow-auto max-h-[65vh]">
+              {viewerFile.type === 'application/pdf' ? (
+                <iframe
+                  src={viewerFile.dataUrl}
+                  title={viewerFile.name}
+                  className="w-full h-[60vh]"
+                />
+              ) : (
+                <div className="flex items-center justify-center p-4">
+                  <img
+                    src={viewerFile.dataUrl}
+                    alt={viewerFile.name}
+                    className="max-w-full max-h-[60vh] object-contain rounded-lg shadow"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* MODAL: PREVIEW & CETAK FORMAT RESMI A4 */}
