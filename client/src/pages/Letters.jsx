@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { 
   Mail, 
   Plus, 
@@ -6,13 +6,11 @@ import {
   FileText, 
   Printer, 
   Trash2, 
-  ExternalLink,
   Sparkles,
   Send,
   Inbox,
   CheckCircle,
   Copy,
-  Download,
   Eye,
   Megaphone,
   Upload,
@@ -21,6 +19,9 @@ import {
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
 import { formatDate, getHijriDateString } from '../utils/formatters';
+import { fileToDataUrl } from '../utils/files';
+
+const PdfViewer = lazy(() => import('../components/PdfViewer'));
 
 const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
@@ -269,36 +270,6 @@ export default function Letters({ activeOrg, settings = {} }) {
       subject: l.subject || '',
     });
   };
-
-  const downloadDataUrl = async (dataUrl, filename) => {
-    try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch {
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
-
-  const fileToDataUrl = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
 
   const handleImportFiles = async (e) => {
     const files = Array.from(e.target.files || []).filter(f =>
@@ -1049,66 +1020,21 @@ export default function Letters({ activeOrg, settings = {} }) {
         </form>
       </Modal>
 
-      {/* MODAL: LIHAT LAMPIRAN FILE (GAMBAR / PDF) */}
-      <Modal
-        isOpen={!!viewerFile}
-        onClose={() => setViewerFile(null)}
-        title="Lihat Lampiran Surat"
-        maxWidth="max-w-5xl"
-      >
-        {viewerFile && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-              <div className="text-xs space-y-0.5 min-w-0">
-                <p className="font-bold text-slate-800 truncate">{viewerFile.name}</p>
-                <p className="text-slate-500 truncate">
-                  {viewerFile.letterNumber ? `No. ${viewerFile.letterNumber} · ` : ''}
-                  {viewerFile.subject}
-                </p>
-                <p className="text-slate-400">
-                  {viewerFile.type}
-                  {viewerFile.size ? ` · ${(viewerFile.size / 1024).toFixed(1)} KB` : ''}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={viewerFile.dataUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Buka di Tab Baru
-                </a>
-                <button
-                  onClick={() => downloadDataUrl(viewerFile.dataUrl, viewerFile.name)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Unduh
-                </button>
-              </div>
-            </div>
-            <div className="bg-slate-100 rounded-xl overflow-auto max-h-[65vh]">
-              {viewerFile.type === 'application/pdf' ? (
-                <iframe
-                  src={viewerFile.dataUrl}
-                  title={viewerFile.name}
-                  className="w-full h-[60vh]"
-                />
-              ) : (
-                <div className="flex items-center justify-center p-4">
-                  <img
-                    src={viewerFile.dataUrl}
-                    alt={viewerFile.name}
-                    className="max-w-full max-h-[60vh] object-contain rounded-lg shadow"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+      {/* MODAL: LIHAT LAMPIRAN FILE (GAMBAR / PDF) — Memakai PdfViewer reusable */}
+      <Suspense fallback={null}>
+        <PdfViewer
+          isOpen={!!viewerFile}
+          onClose={() => setViewerFile(null)}
+          file={viewerFile?.dataUrl}
+          fileName={viewerFile?.name}
+          fileType={viewerFile?.type}
+          metadata={{
+            letterNumber: viewerFile?.letterNumber,
+            subject: viewerFile?.subject,
+            size: viewerFile?.size,
+          }}
+        />
+      </Suspense>
 
       {/* MODAL: PREVIEW & CETAK FORMAT RESMI A4 */}
       <Modal
