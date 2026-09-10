@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Printer, RefreshCw, CheckCircle, ShieldCheck } from 'lucide-react';
+import { printToPdf } from '../utils/print';
 
 export default function KtaCard({ member, settings = {} }) {
   const [side, setSide] = useState('front'); // 'front' or 'back'
@@ -26,7 +27,7 @@ export default function KtaCard({ member, settings = {} }) {
   });
 
   const handlePrint = () => {
-    window.print();
+    printToPdf('.kta-print-card');
   };
 
   return (
@@ -50,7 +51,7 @@ export default function KtaCard({ member, settings = {} }) {
       </div>
 
       {/* KTA Printable Container - Standard Credit Card Ratio (85.6mm x 53.98mm ~ 3.37in x 2.125in) */}
-      <div className="w-[360px] sm:w-[400px] h-[240px] sm:h-[250px] relative rounded-2xl overflow-hidden shadow-2xl transition-all select-none border border-slate-200">
+      <div className="kta-print-card w-[360px] sm:w-[400px] h-[240px] sm:h-[250px] relative rounded-2xl overflow-hidden shadow-2xl transition-all select-none border border-slate-200">
         
         {/* ================= FRONT SIDE ================= */}
         {side === 'front' && (

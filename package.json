@@ -11,7 +11,13 @@
     "dev": "node dev.js",
     "build": "npm run build --prefix client"
   },
-  "keywords": ["ipnu", "ippnu", "administrasi", "desa", "ranting"],
+  "keywords": [
+    "ipnu",
+    "ippnu",
+    "administrasi",
+    "desa",
+    "ranting"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -19,6 +25,8 @@
     "express": "^4.21.2",
     "multer": "^2.3.0",
     "pg": "^8.13.1"
+  },
+  "overrides": {
+    "qs": "6.16.0"
   }
 }
-

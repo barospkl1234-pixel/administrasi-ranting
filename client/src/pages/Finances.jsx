@@ -16,6 +16,7 @@ import {
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
 import { formatRupiah, formatDate } from '../utils/formatters';
+import { printToPdf } from '../utils/print';
 
 export default function Finances({ activeOrg, settings = {} }) {
   const [finances, setFinances] = useState([]);
@@ -436,7 +437,7 @@ export default function Finances({ activeOrg, settings = {} }) {
         <div className="space-y-4">
           <div className="no-print flex justify-end">
             <button
-              onClick={() => window.print()}
+              onClick={() => printToPdf('.print-container')}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700"
             >
               <Printer className="w-4 h-4" />
