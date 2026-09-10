@@ -29,7 +29,7 @@ function KopSurat({ heading1, heading2, area, address, phone, email }) {
   return (
     <div className="relative border-b-4 border-double border-slate-800 pb-3 mb-7">
       {/* Kiri: Logo IPNU & IPPNU berdampingan */}
-      <div className="absolute left-0 flex items-center gap-1" style={{ top: '-0.15cm' }}>
+      <div className="absolute left-0 flex items-center gap-1" style={{ top: '-0.3cm' }}>
         <img src="/logo-ipnu.png" alt="Logo IPNU" className="w-[3cm] h-[3cm] object-contain" />
         <img src="/logo-ippnu.png" alt="Logo IPPNU" className="w-[3cm] h-[3cm] object-contain" />
       </div>
