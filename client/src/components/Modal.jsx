@@ -26,7 +26,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-fade-in" 
+        className="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-fade-in" 
         onClick={onClose} 
       />
 
@@ -37,7 +37,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/50">
+          <div className="no-print flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/50">
             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               {title}
             </h3>
@@ -52,7 +52,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 max-h-[80vh] overflow-y-auto">
+          <div className="modal-body px-6 py-5 max-h-[80vh] overflow-y-auto">
             {children}
           </div>
         </div>

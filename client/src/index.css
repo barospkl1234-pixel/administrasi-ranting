@@ -31,7 +31,10 @@
 
 /* Print Stylesheet for Surat Resmi & KTA */
 @media print {
+  html,
   body {
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
     color: black !important;
     margin: 0 !important;
@@ -42,8 +45,50 @@
     display: none !important;
   }
 
-  .print-only {
+  /* Reset modal overlay agar isi surat/KTA bisa cetak utuh multi-halaman */
+  [role="dialog"] {
+    position: static !important;
+    inset: auto !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    z-index: auto !important;
+  }
+
+  [role="dialog"] > div.fixed,
+  [role="dialog"] .modal-backdrop {
+    display: none !important;
+  }
+
+  [role="dialog"] > .flex,
+  [role="dialog"] > div > .flex {
     display: block !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    text-align: left !important;
+    background: white !important;
+  }
+
+  [role="dialog"] > .flex > div,
+  [role="dialog"] > div > .flex > div {
+    position: static !important;
+    transform: none !important;
+    animation: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  .modal-body {
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .print-container {
@@ -52,6 +97,10 @@
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
+  }
+
+  .print-only {
+    display: block !important;
   }
 
   /* Force background colors and borders in print */
