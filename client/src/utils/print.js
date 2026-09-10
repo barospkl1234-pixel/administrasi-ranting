@@ -28,8 +28,19 @@ export function printToPdf(selector) {
     ${styles}
     <style>
       html, body { margin: 0 !important; padding: 0 !important; background: #ffffff !important; }
-      @page { size: A4 portrait; margin: 15mm 20mm; }
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      @page { size: A4 portrait; margin: 0 !important; }
+      @media print {
+        .print-container {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 15mm 20mm !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+        .kta-print-card { margin: 15mm auto !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      }
     </style>
   </head>
   <body>${clone.outerHTML}</body>
