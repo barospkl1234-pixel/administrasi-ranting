@@ -66,17 +66,17 @@ export default function Dashboard({ activeOrg, setActivePage, settings = {} }) {
     <div className="space-y-6 pb-12">
       
       {/* Welcome Hero Banner */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white p-6 sm:p-8 shadow-xl shadow-emerald-950/10">
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white p-5 sm:p-8 shadow-xl shadow-emerald-950/10">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
         <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-200 text-xs font-bold mb-3 border border-white/15">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Sistem Informasi & Administrasi Resmi Ranting NU</span>
+          <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-200 text-[10px] sm:text-xs font-bold mb-3 border border-white/15">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <span className="truncate">Sistem Informasi & Administrasi Resmi Ranting NU</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
             Selamat Datang di SIAD PR IPNU IPPNU {settings.villageName || 'Kalibaros'}
           </h2>
-          <p className="text-sm sm:text-base text-emerald-100/90 mt-2 leading-relaxed">
+          <p className="text-xs sm:text-base text-emerald-100/90 mt-2 leading-relaxed">
             Kelola data kaderisasi, penerbitan surat resmi bersurat QR Code, pembukuan kas organisasi, presensi rutinan selapanan, dan inventaris ranting dalam satu sistem terpadu.
           </p>
 

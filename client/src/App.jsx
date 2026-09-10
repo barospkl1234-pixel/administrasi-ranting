@@ -79,12 +79,12 @@ export default function App() {
         />
 
         {/* Page Content Container */}
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {renderPage()}
         </main>
 
         {/* Footer */}
-        <footer className="no-print border-t border-slate-200/80 py-4 px-8 text-center text-xs text-slate-400 bg-white">
+        <footer className="no-print border-t border-slate-200/80 py-4 px-4 sm:px-8 text-center text-xs text-slate-400 bg-white">
           <p>© {new Date().getFullYear()} Sistem Informasi & Administrasi Pimpinan Ranting (PR) IPNU - IPPNU Kelurahan {settings.villageName || 'Kalibaros'}.</p>
           <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">Motto: Belajar, Berjuang, Bertaqwa</p>
         </footer>

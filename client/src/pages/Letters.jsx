@@ -371,7 +371,7 @@ export default function Letters({ activeOrg, settings = {} }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           <button
             onClick={() => setIsImportModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition-all shadow-blue-900/20"
