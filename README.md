@@ -59,31 +59,6 @@ Sistem ini dibangun dengan kesesuaian terhadap **Pedoman Administrasi (PA) resmi
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi
-
-Aplikasi telah terinstal dan siap dijalankan dengan Node.js.
-
-### 1. Masuk ke Folder Proyek
-```powershell
-cd C:\Users\Irfanudin\.gemini\antigravity\scratch\administrasi-ipnu-ippnu
-```
-
-### 2. Jalankan Server Aplikasi
-```powershell
-node server/index.js
-```
-Akses aplikasi melalui browser di alamat:
-👉 **`http://localhost:5000`**
-
-### 3. Mode Pengembangan Frontend (Opsional - Hot Reload)
-Jika ingin melakukan pengeditan tampilan secara live dengan Vite:
-```powershell
-npm run dev
-```
-Akses di `http://localhost:5173`.
-
----
-
 ## 📁 Struktur File & Direktori
 
 ```text
