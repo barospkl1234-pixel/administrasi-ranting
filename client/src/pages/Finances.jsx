@@ -180,24 +180,24 @@ export default function Finances({ activeOrg, settings = {} }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 self-start sm:self-auto w-full sm:w-auto">
           <button
             onClick={() => setIsReportModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-sm transition-all"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 col-span-2 sm:col-auto text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-sm transition-all"
           >
             <Printer className="w-4 h-4 text-slate-500" />
             Cetak Laporan Kas
           </button>
           <button
             onClick={() => handleOpenAdd('income')}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all shadow-emerald-900/20"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all shadow-emerald-900/20"
           >
             <Plus className="w-4 h-4" />
             Catat Pemasukan
           </button>
           <button
             onClick={() => handleOpenAdd('expense')}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-all shadow-rose-900/20"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-all shadow-rose-900/20"
           >
             <Plus className="w-4 h-4" />
             Catat Pengeluaran
@@ -210,7 +210,7 @@ export default function Finances({ activeOrg, settings = {} }) {
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500" />
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Pemasukan</p>
-          <h3 className="text-2xl font-black text-emerald-600 mt-1">{formatRupiah(totalIncome)}</h3>
+          <h3 className="text-2xl font-black text-emerald-600 mt-1 break-all leading-tight">{formatRupiah(totalIncome)}</h3>
           <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
             <ArrowDownRight className="w-3.5 h-3.5 text-emerald-500" />
             Iuran kader, donatur & dana usaha
@@ -220,7 +220,7 @@ export default function Finances({ activeOrg, settings = {} }) {
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-500" />
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Pengeluaran</p>
-          <h3 className="text-2xl font-black text-rose-600 mt-1">{formatRupiah(totalExpense)}</h3>
+          <h3 className="text-2xl font-black text-rose-600 mt-1 break-all leading-tight">{formatRupiah(totalExpense)}</h3>
           <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
             <ArrowUpRight className="w-3.5 h-3.5 text-rose-500" />
             Konsumsi, ATK, & operasional
@@ -230,7 +230,7 @@ export default function Finances({ activeOrg, settings = {} }) {
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-teal-500" />
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Saldo Akhir Saat Ini</p>
-          <h3 className="text-2xl font-black text-teal-700 mt-1">{formatRupiah(currentBalance)}</h3>
+          <h3 className="text-2xl font-black text-teal-700 mt-1 break-all leading-tight">{formatRupiah(currentBalance)}</h3>
           <p className="text-[11px] text-slate-400 mt-1">
             {activeOrg === 'ALL' ? 'Total Kas IPNU + IPPNU + Bersama' : `Saldo Kas Ranting ${activeOrg}`}
           </p>
@@ -389,7 +389,7 @@ export default function Finances({ activeOrg, settings = {} }) {
         maxWidth="max-w-lg"
       >
         <form onSubmit={handleSubmitAdd} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Buku Kas Organisasi *</label>
               <select
@@ -563,22 +563,23 @@ export default function Finances({ activeOrg, settings = {} }) {
               <p className="text-[10px] text-slate-500">Masa Khidmat {settings.period || '2025 - 2027'}</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
               <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                 <p className="text-[10px] text-emerald-800 font-bold uppercase">Total Pemasukan</p>
-                <p className="text-sm font-extrabold text-emerald-700 font-mono mt-0.5">{formatRupiah(totalIncome)}</p>
+                <p className="text-sm font-extrabold text-emerald-700 font-mono mt-0.5 break-all">{formatRupiah(totalIncome)}</p>
               </div>
               <div className="p-3 bg-rose-50 rounded-xl border border-rose-200">
                 <p className="text-[10px] text-rose-800 font-bold uppercase">Total Pengeluaran</p>
-                <p className="text-sm font-extrabold text-rose-700 font-mono mt-0.5">{formatRupiah(totalExpense)}</p>
+                <p className="text-sm font-extrabold text-rose-700 font-mono mt-0.5 break-all">{formatRupiah(totalExpense)}</p>
               </div>
               <div className="p-3 bg-teal-50 rounded-xl border border-teal-200">
                 <p className="text-[10px] text-teal-800 font-bold uppercase">Saldo Kas Akhir</p>
-                <p className="text-sm font-extrabold text-teal-700 font-mono mt-0.5">{formatRupiah(currentBalance)}</p>
+                <p className="text-sm font-extrabold text-teal-700 font-mono mt-0.5 break-all">{formatRupiah(currentBalance)}</p>
               </div>
             </div>
 
-            <table className="w-full text-left text-[11px] border border-slate-200">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[11px] border border-slate-200 min-w-[560px]">
               <thead className="bg-slate-100 font-bold text-slate-700">
                 <tr>
                   <th className="p-2 border">No</th>
@@ -606,6 +607,7 @@ export default function Finances({ activeOrg, settings = {} }) {
                 ))}
               </tbody>
             </table>
+            </div>
 
             {/* Signature Block */}
             <div className="grid grid-cols-2 text-center pt-8 text-[11px]">
