@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Calendar } from 'lucide-react';
 import { formatDateWithDay, getHijriDateString } from '../utils/formatters';
 import NotificationBell from './NotificationBell';
 
@@ -94,6 +94,15 @@ export default function Navbar({ activePage, activeOrg, setActiveOrg, settings =
 
         </div>
 
+      </div>
+
+      {/* Mobile Date Bar */}
+      <div className="md:hidden flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-100">
+        <span className="flex items-center gap-1.5 min-w-0">
+          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <span className="text-xs font-bold text-slate-700 truncate">{masehiDate}</span>
+        </span>
+        <span className="text-[10px] font-bold text-emerald-700 font-mono tracking-tight shrink-0">{hijriDate}</span>
       </div>
     </header>
   );
