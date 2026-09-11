@@ -46,14 +46,14 @@ const storage = usePostgres
     });
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Format foto harus JPG, PNG, atau WEBP'));
+      cb(new Error('Format file harus JPG, PNG, WEBP, atau PDF'));
     }
   }
 });
@@ -88,20 +88,21 @@ if (usePostgres) {
   app.use('/uploads', express.static(uploadDir));
 }
 
-// Photo upload endpoint
+// Photo/file upload endpoint (foto profil & bukti nota/kwitansi)
 app.post('/api/upload', upload.single('photo'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Tidak ada file foto yang diunggah' });
+      return res.status(400).json({ success: false, message: 'Tidak ada file yang diunggah' });
     }
     const filename = usePostgres ? genFilename(req.file.originalname) : req.file.filename;
     if (usePostgres) {
       await saveUpload(filename, req.file.buffer, req.file.mimetype);
     }
     const url = `/uploads/${filename}`;
-    res.status(201).json({ success: true, url, message: 'Foto berhasil diunggah' });
+    const isPdf = req.file.mimetype === 'application/pdf' || path.extname(req.file.originalname).toLowerCase() === '.pdf';
+    res.status(201).json({ success: true, url, type: isPdf ? 'pdf' : 'image', message: 'File berhasil diunggah' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Gagal menyimpan foto: ' + err.message });
+    res.status(500).json({ success: false, message: 'Gagal menyimpan file: ' + err.message });
   }
 });
 
@@ -224,7 +225,7 @@ app.get('*', (req, res, next) => {
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ success: false, message: 'Ukuran foto maksimal 5 MB' });
+      return res.status(400).json({ success: false, message: 'Ukuran file maksimal 10 MB' });
     }
     return res.status(400).json({ success: false, message: err.message });
   }

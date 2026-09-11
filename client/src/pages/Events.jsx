@@ -13,18 +13,22 @@ import {
   Users,
   Check,
   Calendar,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
 import { formatDate, formatDateWithDay } from '../utils/formatters';
+import { getEventStart, isUpcoming } from '../utils/notifications';
 
 export default function Events({ activeOrg, settings = {} }) {
   const [events, setEvents] = useState([]);
   const [allMembers, setAllMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [now, setNow] = useState(Date.now());
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -65,6 +69,21 @@ export default function Events({ activeOrg, settings = {} }) {
   useEffect(() => {
     loadData();
   }, [activeOrg, search]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const filteredEvents = events.filter((evt) => {
+    if (statusFilter === 'ALL') return true;
+    if (statusFilter === 'UPCOMING') return evt.status !== 'Selesai';
+    return evt.status === 'Selesai';
+  });
+
+  const nearestUpcoming = events
+    .filter(isUpcoming)
+    .sort((a, b) => getEventStart(a).getTime() - getEventStart(b).getTime())[0];
 
   const handleOpenAttendance = (evt) => {
     setSelectedEvent(evt);
@@ -124,6 +143,18 @@ export default function Events({ activeOrg, settings = {} }) {
     }
   };
 
+  const handleToggleStatus = async (evt) => {
+    const isCompleted = evt.status === 'Selesai';
+    if (confirm(`Tandai kegiatan "${evt.title}" sebagai ${isCompleted ? 'belum selesai (Akan Datang)' : 'SELESAI'}?`)) {
+      try {
+        await api.updateEvent(evt.id, { status: isCompleted ? 'Akan Datang' : 'Selesai' });
+        loadData();
+      } catch (err) {
+        alert('Gagal memperbarui status: ' + err.message);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       
@@ -164,10 +195,72 @@ export default function Events({ activeOrg, settings = {} }) {
         </div>
       </div>
 
+      {/* Jadwal Terdekat Banner */}
+      {nearestUpcoming && (() => {
+        const start = getEventStart(nearestUpcoming);
+        const diff = start.getTime() - now;
+        const isOnNow = diff <= 0;
+        const isTodayEvent = isUpcoming(nearestUpcoming) && start.toDateString() === new Date(now).toDateString();
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const countdown =
+          isOnNow
+            ? 'Sedang berlangsung — notifikasi waktu kegiatan telah dikirim'
+            : d > 0
+            ? `${d} hari ${h} jam lagi`
+            : h > 0
+            ? `${h} jam ${m} menit lagi`
+            : `${m} menit lagi`;
+        return (
+          <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-900/20">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Jadwal Agenda Terdekat
+                </p>
+                <h3 className="text-base font-extrabold mt-1">{nearestUpcoming.title}</h3>
+                <p className="text-xs text-emerald-100 mt-1">
+                  {formatDateWithDay(nearestUpcoming.date)} • {nearestUpcoming.time} • {nearestUpcoming.location}
+                </p>
+              </div>
+              <div className="shrink-0 bg-white/10 backdrop-blur rounded-xl px-4 py-3 text-center border border-white/20">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-100">Mulai dalam</p>
+                <p className={`text-lg font-black mt-0.5 ${isOnNow ? 'text-amber-300' : ''}`}>{countdown}</p>
+                {isTodayEvent && !isOnNow && (
+                  <p className="text-[10px] text-emerald-100 mt-0.5">Hari ini • Notifikasi otomatis saat waktunya tiba</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Status Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { key: 'ALL', label: 'Semua Agenda' },
+          { key: 'UPCOMING', label: 'Akan Datang' },
+          { key: 'COMPLETED', label: 'Selesai' }
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatusFilter(tab.key)}
+            className={`px-3.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
+              statusFilter === tab.key
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Events Grid */}
       {loading ? (
         <div className="p-12 text-center text-slate-500">Memuat agenda kegiatan...</div>
-      ) : events.length === 0 ? (
+      ) : filteredEvents.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-slate-200/80 shadow-sm">
           <CalendarDays className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-bold text-slate-700">Belum Ada Agenda Terjadwal</h3>
@@ -175,7 +268,7 @@ export default function Events({ activeOrg, settings = {} }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {events.map((evt) => {
+          {filteredEvents.map((evt) => {
             const attendeeCount = (evt.attendees || []).length;
             const isCompleted = evt.status === 'Selesai';
             return (
@@ -243,6 +336,22 @@ export default function Events({ activeOrg, settings = {} }) {
                     >
                       <UserCheck className="w-3.5 h-3.5" />
                       Daftar Hadir
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(evt)}
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all ${
+                        isCompleted
+                          ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      }`}
+                      title={isCompleted ? 'Buka kembali agenda' : 'Tandai kegiatan selesai'}
+                    >
+                      {isCompleted ? (
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      )}
+                      {isCompleted ? 'Buka Kembali' : 'Tandai Selesai'}
                     </button>
                     <button
                       onClick={() => handleDelete(evt.id, evt.title)}

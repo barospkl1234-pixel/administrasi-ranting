@@ -60,6 +60,26 @@ router.post('/', wrap(async (req, res) => {
   res.status(201).json({ success: true, data: newEvent, message: 'Agenda kegiatan berhasil ditambahkan' });
 }));
 
+// UPDATE event (status selesai / data lainnya)
+router.patch('/:id', wrap(async (req, res) => {
+  const db = await readDB();
+  const events = db.events || [];
+  const event = events.find(e => e.id === req.params.id);
+
+  if (!event) {
+    return res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
+  }
+
+  const allowed = ['title', 'organization', 'date', 'time', 'location', 'pic', 'description', 'status'];
+  allowed.forEach(field => {
+    if (req.body[field] !== undefined) event[field] = req.body[field];
+  });
+
+  await writeDB(db);
+
+  res.json({ success: true, data: event, message: 'Status kegiatan berhasil diperbarui' });
+}));
+
 // TOGGLE member attendance in event
 router.post('/:id/attendance', wrap(async (req, res) => {
   const db = await readDB();

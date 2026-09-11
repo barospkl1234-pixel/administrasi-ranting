@@ -77,6 +77,7 @@ export const api = {
     return fetchApi(`/events?${query}`);
   },
   createEvent: (data) => fetchApi('/events', { method: 'POST', body: JSON.stringify(data) }),
+  updateEvent: (id, data) => fetchApi(`/events/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   toggleAttendance: (eventId, memberId) => fetchApi(`/events/${eventId}/attendance`, { 
     method: 'POST', 
     body: JSON.stringify({ memberId }) 

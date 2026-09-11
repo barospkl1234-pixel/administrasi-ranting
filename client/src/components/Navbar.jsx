@@ -1,8 +1,9 @@
 import React from 'react';
-import { Menu, Calendar, Shield, Sparkles } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { formatDateWithDay, getHijriDateString } from '../utils/formatters';
+import NotificationBell from './NotificationBell';
 
-export default function Navbar({ activePage, activeOrg, setActiveOrg, settings = {}, onMenuClick }) {
+export default function Navbar({ activePage, activeOrg, setActiveOrg, settings = {}, onMenuClick, setActivePage }) {
   const pageTitles = {
     dashboard: 'Dashboard Administrasi',
     members: 'Database Kader & KTA Digital',
@@ -81,6 +82,9 @@ export default function Navbar({ activePage, activeOrg, setActiveOrg, settings =
               PR IPPNU
             </button>
           </div>
+
+          {/* Notification Bell */}
+          <NotificationBell setActivePage={setActivePage} />
 
           {/* Date Badge */}
           <div className="hidden md:flex flex-col text-right pl-2 border-l border-slate-200">

@@ -10,9 +10,10 @@ console.log('🌟 Menjalankan Sistem Administrasi IPNU IPPNU Ranting Desa...\n')
 const server = spawn(process.execPath, ['server/index.js'], { stdio: 'inherit' });
 
 // Start frontend (Vite dev server on http://localhost:5173, proxy /api -> :5000)
-const client = isWin
-  ? spawn('cmd.exe', ['/c', 'npm run dev'], { stdio: 'inherit', cwd: path.resolve('client') })
-  : spawn(npmCmd, ['run', 'dev'], { stdio: 'inherit', cwd: path.resolve('client') });
+const client = spawn(isWin ? 'cmd.exe' : npmCmd, isWin ? ['/c', 'npm run dev'] : ['run', 'dev'], {
+  stdio: 'inherit',
+  cwd: path.resolve('client'),
+});
 
 function cleanup() {
   console.log('\n🛑 Menghentikan server...');

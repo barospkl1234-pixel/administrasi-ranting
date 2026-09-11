@@ -11,7 +11,12 @@ import {
   Calendar,
   DollarSign,
   TrendingUp,
-  Tag
+  Tag,
+  Paperclip,
+  FileText,
+  Image,
+  Eye,
+  X
 } from 'lucide-react';
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
@@ -29,6 +34,7 @@ export default function Finances({ activeOrg, settings = {} }) {
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [receiptViewData, setReceiptViewData] = useState(null);
 
   // Form State
   const initialForm = {
@@ -38,9 +44,12 @@ export default function Finances({ activeOrg, settings = {} }) {
     category: 'Iuran Rutin Anggota',
     amount: '',
     description: '',
-    receiptNo: ''
+    receiptNo: '',
+    receiptFile: null
   };
   const [formData, setFormData] = useState(initialForm);
+  const [receiptPreview, setReceiptPreview] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const loadFinances = async () => {
     try {
@@ -69,23 +78,60 @@ export default function Finances({ activeOrg, settings = {} }) {
       ...initialForm,
       type: defaultType,
       organization: activeOrg === 'ALL' ? 'IPNU' : activeOrg,
-      category: defaultType === 'income' ? 'Iuran Rutin Anggota' : 'Konsumsi Kegiatan'
+      category: defaultType === 'income' ? 'Iuran Rutin Anggota' : 'Konsumsi Kegiatan',
+      receiptFile: null
     });
+    setReceiptPreview('');
     setIsAddModalOpen(true);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.type)) {
+      alert('Format file harus JPG, PNG, WEBP, atau PDF');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Ukuran file maksimal 10 MB');
+      return;
+    }
+    setFormData({ ...formData, receiptFile: file });
+    setReceiptPreview(file.type === 'application/pdf' ? 'pdf' : URL.createObjectURL(file));
   };
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     try {
+      let receiptUrl = '';
+      if (formData.receiptFile) {
+        setUploading(true);
+        const uploadRes = await api.uploadPhoto(formData.receiptFile);
+        receiptUrl = uploadRes.url || '';
+        setUploading(false);
+      }
       await api.createFinance({
         ...formData,
-        amount: Number(formData.amount)
+        amount: Number(formData.amount),
+        receiptUrl
       });
       setIsAddModalOpen(false);
+      setReceiptPreview('');
       loadFinances();
     } catch (err) {
+      setUploading(false);
       alert('Gagal mencatat transaksi: ' + err.message);
     }
+  };
+
+  const handleViewReceipt = (transaction) => {
+    if (!transaction.receiptUrl) return;
+    setReceiptViewData({
+      url: transaction.receiptUrl,
+      type: transaction.receiptUrl.endsWith('.pdf') ? 'pdf' : 'image',
+      description: transaction.description
+    });
   };
 
   const handleDelete = async (id, desc) => {
@@ -279,6 +325,12 @@ export default function Finances({ activeOrg, settings = {} }) {
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <p className="font-semibold text-slate-800">{formatDate(f.date)}</p>
                         <p className="text-[10px] font-mono text-slate-400">{f.receiptNo || f.id}</p>
+                        {f.receiptUrl && (
+                          <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[9px] font-bold">
+                            <Paperclip className="w-2.5 h-2.5" />
+                            {f.receiptUrl.endsWith('.pdf') ? 'PDF' : 'Gambar'}
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
@@ -301,13 +353,24 @@ export default function Finances({ activeOrg, settings = {} }) {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-center">
-                        <button
-                          onClick={() => handleDelete(f.id, f.description)}
-                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
-                          title="Hapus"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          {f.receiptUrl && (
+                            <button
+                              onClick={() => handleViewReceipt(f)}
+                              className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
+                              title="Lihat Bukti"
+                            >
+                              {f.receiptUrl.endsWith('.pdf') ? <FileText className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete(f.id, f.description)}
+                            className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                            title="Hapus"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -407,6 +470,49 @@ export default function Finances({ activeOrg, settings = {} }) {
             />
           </div>
 
+          {formData.type === 'expense' && (
+            <div className={formData.receiptFile ? 'border border-rose-200 bg-rose-50/40 rounded-xl p-3' : ''}>
+              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-rose-500" />
+                Upload Bukti Nota / Kwitansi {formData.type === 'expense' && <span className="text-[10px] font-normal text-slate-400">(Opsional)</span>}
+              </label>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 flex items-center justify-center gap-2 px-4 py-4 border-2 border-dashed border-slate-300 rounded-xl bg-white hover:bg-slate-50 cursor-pointer transition-colors">
+                  <Paperclip className="w-4 h-4 text-slate-400" />
+                  <span className="text-xs text-slate-500 font-medium">
+                    {formData.receiptFile ? formData.receiptFile.name : 'Klik untuk pilih gambar atau PDF...'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {receiptPreview && (
+                  <div className="relative shrink-0">
+                    {receiptPreview === 'pdf' ? (
+                      <div className="w-16 h-16 bg-rose-100 rounded-lg flex flex-col items-center justify-center border border-rose-200">
+                        <FileText className="w-6 h-6 text-rose-500" />
+                        <span className="text-[8px] font-bold text-rose-600 mt-0.5">PDF</span>
+                      </div>
+                    ) : (
+                      <img src={receiptPreview} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setFormData({ ...formData, receiptFile: null }); setReceiptPreview(''); }}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1.5">Format: JPG, PNG, WEBP, atau PDF. Maks 10 MB.</p>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button
               type="button"
@@ -417,11 +523,12 @@ export default function Finances({ activeOrg, settings = {} }) {
             </button>
             <button
               type="submit"
+              disabled={uploading}
               className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-sm ${
                 formData.type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
-              }`}
+              } ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              Simpan Transaksi
+              {uploading ? 'Mengunggah Bukti...' : 'Simpan Transaksi'}
             </button>
           </div>
         </form>
@@ -520,7 +627,33 @@ export default function Finances({ activeOrg, settings = {} }) {
         </div>
       </Modal>
 
+      {/* MODAL: LIHAT BUKTI NOTA/KWITANSI */}
+      <Modal
+        isOpen={!!receiptViewData}
+        onClose={() => setReceiptViewData(null)}
+        title="Bukti Nota / Kwitansi"
+        maxWidth="max-w-2xl"
+      >
+        {receiptViewData && (
+          <div className="space-y-3">
+            <p className="text-xs text-slate-600 font-medium">{receiptViewData.description}</p>
+            {receiptViewData.type === 'pdf' ? (
+              <iframe
+                src={receiptViewData.url}
+                className="w-full h-[500px] rounded-lg border border-slate-200"
+                title="Bukti PDF"
+              />
+            ) : (
+              <img
+                src={receiptViewData.url}
+                alt="Bukti Nota/Kwitansi"
+                className="w-full max-h-[500px] object-contain rounded-lg border border-slate-200"
+              />
+            )}
+          </div>
+        )}
+      </Modal>
+
     </div>
   );
 }
-

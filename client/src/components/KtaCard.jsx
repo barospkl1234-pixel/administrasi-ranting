@@ -71,13 +71,25 @@ export default function KtaCard({ member, settings = {} }) {
                 {/* Logo Badge */}
                 <div className="w-10 h-10 rounded-full bg-white p-1 flex items-center justify-center shadow-md shrink-0">
                   {isIpnu ? (
-                    <div className="text-center font-black text-[#006837] text-[10px] leading-tight">
-                      ★ IPNU ★
-                    </div>
+                    <img 
+                      src="/logo-ipnu.png" 
+                      alt="Logo IPNU" 
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="text-center font-black text-[#006837] text-[10px] leading-tight">&#9733; IPNU &#9733;</div>';
+                      }}
+                    />
                   ) : (
-                    <div className="text-center font-black text-[#f59e0b] text-[9px] leading-tight">
-                      ★ IPPNU ★
-                    </div>
+                    <img 
+                      src="/logo-ippnu.png" 
+                      alt="Logo IPPNU" 
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="text-center font-black text-[#006837] text-[9px] leading-tight">&#9733; IPPNU &#9733;</div>';
+                      }}
+                    />
                   )}
                 </div>
                 <div>
@@ -105,11 +117,11 @@ export default function KtaCard({ member, settings = {} }) {
             {/* KTA Content: Photo & Details */}
             <div className="relative z-10 flex items-center gap-3.5 my-auto">
               {/* Photo */}
-              <div className="w-20 h-24 rounded-xl overflow-hidden border-2 border-white/90 shadow-md bg-slate-100 shrink-0 relative">
+              <div className="w-24 h-28 overflow-hidden shrink-0 relative">
                 <img 
                   src={member.photo} 
                   alt={member.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover block"
                   onError={(e) => {
                     e.target.src = isIpnu ? 
                       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80' : 

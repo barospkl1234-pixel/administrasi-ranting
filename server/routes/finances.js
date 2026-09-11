@@ -94,6 +94,7 @@ router.post('/', wrap(async (req, res) => {
     amount: Number(req.body.amount) || 0,
     description: req.body.description || '',
     receiptNo: receiptNo,
+    receiptUrl: req.body.receiptUrl || '',
     createdAt: new Date().toISOString()
   };
 

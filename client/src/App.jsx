@@ -76,6 +76,7 @@ export default function App() {
           setActiveOrg={setActiveOrg}
           settings={settings}
           onMenuClick={() => setIsMobileOpen(true)}
+          setActivePage={setActivePage}
         />
 
         {/* Page Content Container */}

@@ -13,6 +13,25 @@
   font-family: 'Amiri', serif;
 }
 
+/* KTA: gambar (foto) tanpa border/outline apapun */
+.kta-print-card img {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Toast Notification Animation */
+@keyframes siadSlideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
