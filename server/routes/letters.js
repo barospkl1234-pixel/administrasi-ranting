@@ -1,5 +1,5 @@
 import express from 'express';
-import { readDB, writeDB } from '../db.js';
+import { readDB, writeDBChecked, generateId, todayWIB } from '../db.js';
 
 const router = express.Router();
 const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
@@ -16,8 +16,13 @@ function generateLetterNumber(org, typeCategory, codeDept, db) {
   const romanMonth = ROMAN_MONTHS[now.getMonth()];
   const yearShort = String(now.getFullYear()).slice(-2);
 
-  // Count outgoing letters this year for this org
-  const outgoing = (db.letters || []).filter(l => l.type === 'Keluar' && (org === 'BERSAMA' ? l.organization === 'BERSAMA' : l.organization === org));
+  // Count outgoing letters THIS YEAR only for this org
+  const year = String(now.getFullYear());
+  const outgoing = (db.letters || []).filter(l =>
+    l.type === 'Keluar' &&
+    (org === 'BERSAMA' ? l.organization === 'BERSAMA' : l.organization === org) &&
+    l.date && l.date.startsWith(year)
+  );
   const seq = String(outgoing.length + 1).padStart(3, '0');
 
   let orgPrefix = 'PR';
@@ -31,7 +36,6 @@ function generateLetterNumber(org, typeCategory, codeDept, db) {
     wilCode = `${codeIpnu}-${codeIppnu}`;
   }
 
-  // Example: 016/PR/A/Sek/7354/IX/26
   return `${seq}/${orgPrefix}/${typeCategory}/${codeDept}/${wilCode}/${romanMonth}/${yearShort}`;
 }
 
@@ -50,13 +54,12 @@ router.get('/', wrap(async (req, res) => {
   if (search) {
     const q = search.toLowerCase();
     list = list.filter(l => 
-      l.letterNumber.toLowerCase().includes(q) || 
-      l.subject.toLowerCase().includes(q) ||
+      (l.letterNumber && l.letterNumber.toLowerCase().includes(q)) || 
+      (l.subject && l.subject.toLowerCase().includes(q)) ||
       (l.recipientOrSender && l.recipientOrSender.toLowerCase().includes(q))
     );
   }
 
-  // Sort descending by date
   list.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   res.json({ success: true, data: list });
@@ -75,8 +78,7 @@ router.post('/', wrap(async (req, res) => {
   const db = await readDB();
   const letters = db.letters || [];
   
-  const nextNum = letters.length + 1;
-  const newId = `LTR-${String(nextNum).padStart(3, '0')}`;
+  const newId = generateId('LTR-', letters);
 
   const extraFields = [
     'template', 'dept', 'eventName', 'eventDayDate', 'eventTime', 'eventLocation',
@@ -93,11 +95,11 @@ router.post('/', wrap(async (req, res) => {
     id: newId,
     letterNumber: req.body.letterNumber || generateLetterNumber(req.body.organization || 'IPNU', req.body.category || 'A', req.body.dept || 'Sek', db),
     organization: req.body.organization || 'IPNU',
-    type: req.body.type || 'Keluar', // Keluar or Masuk
-    category: req.body.category || 'A', // A = Internal, B = Eksternal
+    type: req.body.type || 'Keluar',
+    category: req.body.category || 'A',
     subject: req.body.subject,
     recipientOrSender: req.body.recipientOrSender || '',
-    date: req.body.date || new Date().toISOString().split('T')[0],
+    date: req.body.date || todayWIB(),
     content: req.body.content || '',
     status: req.body.status || (req.body.type === 'Masuk' ? 'Diarsipkan' : 'Terkirim'),
     signatory: req.body.signatory || 'Ketua & Sekretaris',
@@ -107,12 +109,12 @@ router.post('/', wrap(async (req, res) => {
 
   letters.unshift(newLetter);
   db.letters = letters;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.status(201).json({ success: true, data: newLetter, message: 'Surat berhasil dicatat/diterbitkan' });
 }));
 
-// IMPORT Surat Masuk (Gambar/PDF sebagai lampiran base64)
+// IMPORT Surat Masuk
 router.post('/import', wrap(async (req, res) => {
   const db = await readDB();
   const letters = db.letters || [];
@@ -124,17 +126,16 @@ router.post('/import', wrap(async (req, res) => {
 
   const created = [];
   items.forEach((item, idx) => {
-    const nextNum = letters.length + created.length + 1;
-    const id = `LTR-${String(nextNum).padStart(3, '0')}`;
+    const id = generateId('LTR-', [...letters, ...created]);
     const letter = {
       id,
-      letterNumber: (item.letterNumber && item.letterNumber.trim()) || `SM-${String(nextNum).padStart(3, '0')}`,
+      letterNumber: (item.letterNumber && item.letterNumber.trim()) || `SM-${id.slice(4)}`,
       organization: item.organization || 'BERSAMA',
       type: 'Masuk',
       category: item.category || 'A',
       subject: (item.subject && item.subject.trim()) || (item.attachment && item.attachment.name) || 'Surat Masuk',
       recipientOrSender: item.recipientOrSender ? item.recipientOrSender.trim() : '',
-      date: item.date || new Date().toISOString().split('T')[0],
+      date: item.date || todayWIB(),
       content: item.content || '',
       status: 'Diarsipkan',
       signatory: 'Ketua & Sekretaris',
@@ -148,7 +149,7 @@ router.post('/import', wrap(async (req, res) => {
   });
 
   db.letters = [...created, ...letters];
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.status(201).json({ success: true, data: created, message: `${created.length} surat masuk berhasil diimport` });
 }));
@@ -165,7 +166,7 @@ router.delete('/:id', wrap(async (req, res) => {
 
   letters.splice(index, 1);
   db.letters = letters;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ success: true, message: 'Surat berhasil dihapus' });
 }));

@@ -1,5 +1,5 @@
 import express from 'express';
-import { readDB, writeDB } from '../db.js';
+import { readDB, writeDBChecked, generateId, todayWIB } from '../db.js';
 
 const router = express.Router();
 const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
@@ -16,12 +16,11 @@ router.get('/', wrap(async (req, res) => {
   if (search) {
     const q = search.toLowerCase();
     list = list.filter(e => 
-      e.title.toLowerCase().includes(q) || 
-      e.location.toLowerCase().includes(q)
+      (e.title && e.title.toLowerCase().includes(q)) || 
+      (e.location && e.location.toLowerCase().includes(q))
     );
   }
 
-  // Populate attendee names for convenience
   const memberMap = new Map((db.members || []).map(m => [m.id, m]));
   const populated = list.map(evt => ({
     ...evt,
@@ -36,14 +35,13 @@ router.post('/', wrap(async (req, res) => {
   const db = await readDB();
   const events = db.events || [];
 
-  const nextNum = events.length + 1;
-  const newId = `EVT-${String(nextNum).padStart(3, '0')}`;
+  const newId = generateId('EVT-', events);
 
   const newEvent = {
     id: newId,
     title: req.body.title,
     organization: req.body.organization || 'BERSAMA',
-    date: req.body.date || new Date().toISOString().split('T')[0],
+    date: req.body.date || todayWIB(),
     time: req.body.time || '19:30 WIB - Selesai',
     location: req.body.location || 'Gedung TPQ Ranting',
     pic: req.body.pic || 'Ketua IPNU / IPPNU',
@@ -55,12 +53,12 @@ router.post('/', wrap(async (req, res) => {
 
   events.unshift(newEvent);
   db.events = events;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.status(201).json({ success: true, data: newEvent, message: 'Agenda kegiatan berhasil ditambahkan' });
 }));
 
-// UPDATE event (status selesai / data lainnya)
+// UPDATE event
 router.patch('/:id', wrap(async (req, res) => {
   const db = await readDB();
   const events = db.events || [];
@@ -75,7 +73,7 @@ router.patch('/:id', wrap(async (req, res) => {
     if (req.body[field] !== undefined) event[field] = req.body[field];
   });
 
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ success: true, data: event, message: 'Status kegiatan berhasil diperbarui' });
 }));
@@ -100,16 +98,14 @@ router.post('/:id/attendance', wrap(async (req, res) => {
   let isAttending = false;
 
   if (idx > -1) {
-    // Remove
     event.attendees.splice(idx, 1);
     isAttending = false;
   } else {
-    // Add
     event.attendees.push(memberId);
     isAttending = true;
   }
 
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ 
     success: true, 
@@ -131,7 +127,7 @@ router.delete('/:id', wrap(async (req, res) => {
 
   events.splice(index, 1);
   db.events = events;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ success: true, message: 'Kegiatan berhasil dihapus' });
 }));

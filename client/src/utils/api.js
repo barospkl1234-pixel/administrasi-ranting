@@ -1,10 +1,18 @@
 const BASE_URL = '/api';
 
+function getToken() {
+  return localStorage.getItem('siad_token') || '';
+}
+
 export async function fetchApi(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;
+  const token = getToken();
   const defaultHeaders = {
     'Content-Type': 'application/json',
   };
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   const response = await fetch(url, {
     ...options,
@@ -22,14 +30,24 @@ export async function fetchApi(endpoint, options = {}) {
 }
 
 export const api = {
+  // Auth
+  login: (username, password) => fetchApi('/auth/login', { 
+    method: 'POST', 
+    body: JSON.stringify({ username, password }) 
+  }),
+
   getDashboard: () => fetchApi('/dashboard'),
 
   // Photo upload
   uploadPhoto: (file) => {
     const formData = new FormData();
     formData.append('photo', file);
+    const token = getToken();
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     return fetch(`${BASE_URL}/upload`, {
       method: 'POST',
+      headers,
       body: formData,
     }).then(async (response) => {
       const data = await response.json();
@@ -98,4 +116,3 @@ export const api = {
   updateSettings: (data) => fetchApi('/settings', { method: 'PUT', body: JSON.stringify(data) }),
   importBackup: (data) => fetchApi('/settings/import-backup', { method: 'POST', body: JSON.stringify(data) })
 };
-

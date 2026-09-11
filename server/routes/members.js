@@ -1,5 +1,5 @@
 import express from 'express';
-import { readDB, writeDB } from '../db.js';
+import { readDB, writeDBChecked, generateId, todayWIB } from '../db.js';
 
 const router = express.Router();
 const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
@@ -22,7 +22,7 @@ router.get('/', wrap(async (req, res) => {
   if (search) {
     const q = search.toLowerCase();
     list = list.filter(m => 
-      m.name.toLowerCase().includes(q) || 
+      (m.name && m.name.toLowerCase().includes(q)) || 
       (m.studentStatus && m.studentStatus.toLowerCase().includes(q)) || 
       (m.position && m.position.toLowerCase().includes(q))
     );
@@ -46,16 +46,15 @@ router.post('/', wrap(async (req, res) => {
   const db = await readDB();
   const members = db.members || [];
   
-  // Generate ID
-  const nextNum = members.length + 1;
-  const newId = `KDR-${String(nextNum).padStart(3, '0')}`;
+  const newId = generateId('KDR-', members);
+  const gender = req.body.gender || (req.body.organization === 'IPNU' ? 'L' : 'P');
 
   const newMember = {
     id: newId,
     studentStatus: req.body.studentStatus || 'SMA',
     name: req.body.name,
     organization: req.body.organization || 'IPNU',
-    gender: req.body.gender || (req.body.organization === 'IPNU' ? 'L' : 'P'),
+    gender: gender,
     pob: req.body.pob || 'Pekalongan',
     dob: req.body.dob || '2005-01-01',
     phone: req.body.phone || '',
@@ -67,7 +66,7 @@ router.post('/', wrap(async (req, res) => {
     cadreLevel: req.body.cadreLevel || 'Calon Anggota',
     status: req.body.status || 'Aktif',
     joinedYear: parseInt(req.body.joinedYear, 10) || new Date().getFullYear(),
-    photo: req.body.photo || (req.body.gender === 'L' ? 
+    photo: req.body.photo || (gender === 'L' ? 
       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80' : 
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'),
     createdAt: new Date().toISOString()
@@ -75,7 +74,7 @@ router.post('/', wrap(async (req, res) => {
 
   members.push(newMember);
   db.members = members;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.status(201).json({ success: true, data: newMember, message: 'Data kader berhasil ditambahkan' });
 }));
@@ -93,12 +92,13 @@ router.put('/:id', wrap(async (req, res) => {
   const updated = {
     ...members[index],
     ...req.body,
+    id: members[index].id,
     updatedAt: new Date().toISOString()
   };
 
   members[index] = updated;
   db.members = members;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ success: true, data: updated, message: 'Data kader berhasil diperbarui' });
 }));
@@ -115,7 +115,7 @@ router.delete('/:id', wrap(async (req, res) => {
 
   members.splice(index, 1);
   db.members = members;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ success: true, message: 'Data kader berhasil dihapus' });
 }));

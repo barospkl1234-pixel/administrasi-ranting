@@ -1,5 +1,5 @@
 import express from 'express';
-import { readDB, writeDB } from '../db.js';
+import { readDB, writeDBChecked, generateId } from '../db.js';
 
 const router = express.Router();
 const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
@@ -19,8 +19,8 @@ router.get('/', wrap(async (req, res) => {
   if (search) {
     const q = search.toLowerCase();
     list = list.filter(i => 
-      i.name.toLowerCase().includes(q) || 
-      i.code.toLowerCase().includes(q) ||
+      (i.name && i.name.toLowerCase().includes(q)) || 
+      (i.code && i.code.toLowerCase().includes(q)) ||
       (i.location && i.location.toLowerCase().includes(q))
     );
   }
@@ -33,9 +33,9 @@ router.post('/', wrap(async (req, res) => {
   const db = await readDB();
   const inventory = db.inventory || [];
 
-  const nextNum = inventory.length + 1;
-  const newId = `INV-${String(nextNum).padStart(3, '0')}`;
-  const code = req.body.code || `BRG-${String(nextNum).padStart(2, '0')}`;
+  const newId = generateId('INV-', inventory);
+  const num = parseInt(newId.slice(4), 10);
+  const code = req.body.code || `BRG-${String(num).padStart(2, '0')}`;
 
   const newItem = {
     id: newId,
@@ -44,7 +44,7 @@ router.post('/', wrap(async (req, res) => {
     category: req.body.category || 'Perlengkapan',
     quantity: Number(req.body.quantity) || 1,
     unit: req.body.unit || 'Buah',
-    condition: req.body.condition || 'Baik', // Baik, Rusak Ringan, Rusak Berat
+    condition: req.body.condition || 'Baik',
     location: req.body.location || 'Sekretariat',
     notes: req.body.notes || '',
     createdAt: new Date().toISOString()
@@ -52,7 +52,7 @@ router.post('/', wrap(async (req, res) => {
 
   inventory.push(newItem);
   db.inventory = inventory;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.status(201).json({ success: true, data: newItem, message: 'Barang inventaris berhasil dicatat' });
 }));
@@ -70,13 +70,14 @@ router.put('/:id', wrap(async (req, res) => {
   const updated = {
     ...inventory[index],
     ...req.body,
+    id: inventory[index].id,
     quantity: Number(req.body.quantity) || inventory[index].quantity,
     updatedAt: new Date().toISOString()
   };
 
   inventory[index] = updated;
   db.inventory = inventory;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ success: true, data: updated, message: 'Data inventaris berhasil diperbarui' });
 }));
@@ -93,7 +94,7 @@ router.delete('/:id', wrap(async (req, res) => {
 
   inventory.splice(index, 1);
   db.inventory = inventory;
-  await writeDB(db);
+  await writeDBChecked(db);
 
   res.json({ success: true, message: 'Barang berhasil dihapus' });
 }));

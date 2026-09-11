@@ -13,9 +13,11 @@ import { api } from './utils/api';
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
-  const [activeOrg, setActiveOrg] = useState('ALL'); // 'ALL' | 'IPNU' | 'IPPNU'
+  const [activeOrg, setActiveOrg] = useState('ALL');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('siad_logged_in') === 'true');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('siad_logged_in') === 'true' && !!localStorage.getItem('siad_token');
+  });
   const [settings, setSettings] = useState({
     villageName: "Kalibaros",
     subDistrict: "Pekalongan Timur",
@@ -30,13 +32,20 @@ export default function App() {
   });
 
   useEffect(() => {
-    // Load initial organization settings
+    if (!isLoggedIn) return;
     api.getSettings()
       .then(res => {
         if (res.data) setSettings(res.data);
       })
-      .catch(err => console.error('Failed to load settings:', err));
-  }, []);
+      .catch(err => {
+        if (err.message && err.message.includes('401')) {
+          // Token expired/invalid — force logout
+          handleLogout();
+        } else {
+          console.error('Failed to load settings:', err);
+        }
+      });
+  }, [isLoggedIn]);
 
   const renderPage = () => {
     switch (activePage) {
@@ -64,6 +73,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('siad_token');
     localStorage.removeItem('siad_logged_in');
     setIsLoggedIn(false);
     setActivePage('dashboard');
@@ -75,7 +85,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar Navigation */}
       <Sidebar 
         activePage={activePage} 
         setActivePage={setActivePage}
@@ -85,10 +94,8 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Main Layout Area */}
       <div className="flex-1 lg:pl-72 flex flex-col min-w-0">
         
-        {/* Top Sticky Header */}
         <Navbar 
           activePage={activePage}
           activeOrg={activeOrg}
@@ -98,14 +105,12 @@ export default function App() {
           setActivePage={setActivePage}
         />
 
-        {/* Page Content Container */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {renderPage()}
         </main>
 
-        {/* Footer */}
         <footer className="no-print border-t border-slate-200/80 py-4 px-4 sm:px-8 text-center text-xs text-slate-400 bg-white">
-          <p>© {new Date().getFullYear()} Sistem Informasi & Administrasi Pimpinan Ranting (PR) IPNU - IPPNU Kelurahan {settings.villageName || 'Kalibaros'}.</p>
+          <p>&copy; {new Date().getFullYear()} Sistem Informasi & Administrasi Pimpinan Ranting (PR) IPNU - IPPNU Kelurahan {settings.villageName || 'Kalibaros'}.</p>
           <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">Motto: Belajar, Berjuang, Bertaqwa</p>
         </footer>
 
@@ -113,4 +118,3 @@ export default function App() {
     </div>
   );
 }
-

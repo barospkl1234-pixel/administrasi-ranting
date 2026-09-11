@@ -1,11 +1,13 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { initDB, readDB, saveUpload, readUpload, usePostgres } from './db.js';
+import { initDB, readDB, saveUpload, readUpload, usePostgres, useVercelKV, getDbReady, generateId, todayWIB } from './db.js';
 
 import membersRouter from './routes/members.js';
 import lettersRouter from './routes/letters.js';
@@ -38,7 +40,9 @@ function genFilename(originalname) {
   return `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
 }
 
-const storage = usePostgres
+const useRemoteStorage = usePostgres || useVercelKV;
+
+const storage = useRemoteStorage
   ? multer.memoryStorage()
   : multer.diskStorage({
       destination: (req, file, cb) => cb(null, uploadDir),
@@ -61,16 +65,59 @@ const upload = multer({
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Initialize database
-initDB().catch(err => console.error('DB init warning:', err.message));
+// Ensure DB schema is ready before accepting requests
+const dbReady = getDbReady().catch(err => console.error('DB init warning:', err.message));
+
+// ----- Auth helpers (HMAC-based, no external dependencies) -----
+const AUTH_USERNAME = process.env.AUTH_USERNAME || 'PIMPINAN RANTING BAROS';
+const AUTH_PASSWORD = process.env.AUTH_PASSWORD || 'pelajarnukotasantri';
+const AUTH_SECRET = process.env.AUTH_SECRET || 'siad-ipnu-ippnu-ranting-secret-key-2025';
+
+function signToken(username) {
+  const payload = `${username}:${Date.now()}`;
+  const sig = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
+  return Buffer.from(`${payload}:${sig}`).toString('base64url');
+}
+
+function verifyToken(token) {
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString();
+    const parts = decoded.split(':');
+    if (parts.length < 3) return false;
+    const sig = parts.pop();
+    const payload = parts.join(':');
+    const expected = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return false;
+    const username = parts[0];
+    return username === AUTH_USERNAME;
+  } catch {
+    return false;
+  }
+}
+
+// Auth middleware — hanya jalur /api yang sampai di sini; login, health, /uploads, dan file statis sudah
+// didaftarkan lebih dulu, jadi tidak perlu pengecualian path (yang lama malah meloloskan semua request).
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Akses ditolak. Silakan login terlebih dahulu.' });
+  }
+
+  const token = authHeader.slice(7);
+  if (!verifyToken(token)) {
+    return res.status(401).json({ success: false, message: 'Sesi tidak valid. Silakan login kembali.' });
+  }
+
+  next();
+}
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve uploaded photos: dari PostgreSQL (persisten) atau folder statis (lokal)
-if (usePostgres) {
+// Serve uploaded photos: dari Vercel KV/PostgreSQL (persisten) atau folder statis (lokal)
+if (useRemoteStorage) {
   app.get('/uploads/:name', async (req, res) => {
     try {
       const file = await readUpload(req.params.name);
@@ -88,22 +135,17 @@ if (usePostgres) {
   app.use('/uploads', express.static(uploadDir));
 }
 
-// Photo/file upload endpoint (foto profil & bukti nota/kwitansi)
-app.post('/api/upload', upload.single('photo'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Tidak ada file yang diunggah' });
-    }
-    const filename = usePostgres ? genFilename(req.file.originalname) : req.file.filename;
-    if (usePostgres) {
-      await saveUpload(filename, req.file.buffer, req.file.mimetype);
-    }
-    const url = `/uploads/${filename}`;
-    const isPdf = req.file.mimetype === 'application/pdf' || path.extname(req.file.originalname).toLowerCase() === '.pdf';
-    res.status(201).json({ success: true, url, type: isPdf ? 'pdf' : 'image', message: 'File berhasil diunggah' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Gagal menyimpan file: ' + err.message });
+// Photo/file upload endpoint (dibawah auth — lihat pemanggilannya setelah requireAuth)
+
+// ----- Auth routes -----
+app.post('/api/auth/login', async (req, res) => {
+  await dbReady;
+  const { username, password } = req.body || {};
+  if (username !== AUTH_USERNAME || password !== AUTH_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Username atau password salah' });
   }
+  const token = signToken(username);
+  res.json({ success: true, token, message: 'Login berhasil' });
 });
 
 // Health Check
@@ -113,6 +155,27 @@ app.get('/api/health', (req, res) => {
     name: 'SIAD IPNU IPPNU Desa API',
     timestamp: new Date().toISOString() 
   });
+});
+
+// Apply auth middleware to API routes (after login & health)
+app.use('/api', requireAuth);
+
+// Photo/file upload endpoint (dilindungi auth)
+app.post('/api/upload', upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Tidak ada file yang diunggah' });
+    }
+    const filename = useRemoteStorage ? genFilename(req.file.originalname) : req.file.filename;
+    if (useRemoteStorage) {
+      await saveUpload(filename, req.file.buffer, req.file.mimetype);
+    }
+    const url = `/uploads/${filename}`;
+    const isPdf = req.file.mimetype === 'application/pdf' || path.extname(req.file.originalname).toLowerCase() === '.pdf';
+    res.status(201).json({ success: true, url, type: isPdf ? 'pdf' : 'image', message: 'File berhasil diunggah' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Gagal menyimpan file: ' + err.message });
+  }
 });
 
 // Dashboard Overview Aggregated Route
@@ -125,7 +188,6 @@ app.get('/api/dashboard', async (req, res) => {
     const events = db.events || [];
     const inventory = db.inventory || [];
 
-  // Member stats
   const totalMembers = members.length;
   const ipnuCount = members.filter(m => m.organization === 'IPNU').length;
   const ippnuCount = members.filter(m => m.organization === 'IPPNU').length;
@@ -147,7 +209,6 @@ app.get('/api/dashboard', async (req, res) => {
     }
   });
 
-  // Finances stats
   let ipnuBalance = 0;
   let ippnuBalance = 0;
   let jointBalance = 0;
@@ -163,15 +224,14 @@ app.get('/api/dashboard', async (req, res) => {
     }
   });
 
-  // Letter stats
   const totalLetters = letters.length;
   const outgoingLetters = letters.filter(l => l.type === 'Keluar').length;
   const incomingLetters = letters.filter(l => l.type === 'Masuk').length;
 
-  // Upcoming events
-  const today = new Date().toISOString().split('T')[0];
+  // Fixed: use && instead of || for upcoming events filter
+  const today = todayWIB();
   const upcomingEvents = events
-    .filter(e => e.date >= today || e.status !== 'Selesai')
+    .filter(e => e.date >= today && e.status !== 'Selesai')
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 5);
 
@@ -193,8 +253,8 @@ app.get('/api/dashboard', async (req, res) => {
         inventoryCount: inventory.length
       },
       upcomingEvents,
-      recentLetters: letters.slice(0, 5),
-      recentTransactions: finances.slice(0, 5),
+      recentLetters: letters.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 5),
+      recentTransactions: finances.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 5),
       settings: db.settings
     }
   });
@@ -221,7 +281,7 @@ app.get('*', (req, res, next) => {
   });
 });
 
-// Multer / upload error handler
+// Error handler — differentiate client vs server errors
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
@@ -230,7 +290,8 @@ app.use((err, req, res, next) => {
     return res.status(400).json({ success: false, message: err.message });
   }
   if (err) {
-    return res.status(400).json({ success: false, message: err.message });
+    const status = err.status || err.statusCode || 500;
+    return res.status(status).json({ success: false, message: err.message || 'Terjadi kesalahan server' });
   }
   next();
 });
@@ -244,4 +305,3 @@ if (isDirectRun) {
 }
 
 export default app;
-

@@ -21,7 +21,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@upstash/redis": "^1.38.4",
     "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "multer": "^2.3.0",
     "pg": "^8.13.1"

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
-
-const VALID_USERNAME = 'PIMPINAN RANTING BAROS';
-const VALID_PASSWORD = 'pelajarnukotasantri';
+import { api } from '../utils/api';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -11,20 +9,20 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-        localStorage.setItem('siad_logged_in', 'true');
-        onLogin();
-      } else {
-        setError('Username atau password salah. Silakan coba lagi.');
-        setIsLoading(false);
-      }
-    }, 600);
+    try {
+      const res = await api.login(username, password);
+      localStorage.setItem('siad_token', res.token);
+      localStorage.setItem('siad_logged_in', 'true');
+      onLogin();
+    } catch (err) {
+      setError(err.message || 'Username atau password salah. Silakan coba lagi.');
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -1,14 +1,15 @@
 {
-  "installCommand": "npm install && npm install --prefix client",
+  "installCommand": "npm install && npm install --prefix server && npm install --prefix client",
   "buildCommand": "npm run build",
   "outputDirectory": "client/dist",
   "functions": {
     "api/index.js": {
-      "includeFiles": "server/**"
+      "includeFiles": "server/**/*.js"
     }
   },
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/index.js" },
-    { "src": "/uploads/(.*)", "dest": "/api/index.js" }
+    { "src": "/uploads/(.*)", "dest": "/api/index.js" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

@@ -21,7 +21,7 @@
     "kppCommander": "Komandan Putri Ayu",
     "phoneContact": "088227653594",
     "emailContact": "ipnuippnubaros@gmail.com",
-    "updatedAt": "2026-09-11T10:20:42.245Z"
+    "updatedAt": "2026-09-11T16:03:14.240Z"
   },
   "members": [
     {
@@ -159,7 +159,7 @@
       "createdAt": "2026-09-09T08:26:39.214Z"
     },
     {
-      "id": "KDR-008",
+      "id": "KDR-011",
       "studentStatus": "Kuliah",
       "name": "irfan",
       "organization": "IPNU",
@@ -347,32 +347,6 @@
     }
   ],
   "events": [
-    {
-      "id": "EVT-004",
-      "title": "Rutinan Selapanan & Pembacaan Diba'iyah",
-      "organization": "BERSAMA",
-      "date": "2026-09-09",
-      "time": "19:30 WIB - Selesai",
-      "location": "Gedung TPQ",
-      "pic": "Rekan Ahmad Fauzi & Rekanita Siti",
-      "description": "Pembacaan maulid Simtudduror, dilanjutkan kajian fiqih dan koordinasi program kerja pengurus.",
-      "status": "Selesai",
-      "attendees": [],
-      "createdAt": "2026-09-09T11:01:28.254Z"
-    },
-    {
-      "id": "EVT-004",
-      "title": "Rutinan Selapanan & Pembacaan Diba'iyah",
-      "organization": "BERSAMA",
-      "date": "2026-09-09",
-      "time": "19:30 WIB - Selesai",
-      "location": "Gedung TPQ Baiturrohim Krajan",
-      "pic": "Rekan Ahmad Fauzi & Rekanita Siti",
-      "description": "Pembacaan maulid Simtudduror, dilanjutkan kajian fiqih dan koordinasi program kerja pengurus.",
-      "status": "Akan Datang",
-      "attendees": [],
-      "createdAt": "2026-09-09T11:01:08.035Z"
-    },
     {
       "id": "EVT-001",
       "title": "Rutinan Selapanan & Kajian Fiqih Kepemudaan",
