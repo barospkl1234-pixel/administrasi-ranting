@@ -9,10 +9,11 @@ import {
   Settings, 
   Sparkles,
   BookOpen,
+  LogOut,
   X
 } from 'lucide-react';
 
-export default function Sidebar({ activePage, setActivePage, isMobileOpen, setIsMobileOpen, settings = {} }) {
+export default function Sidebar({ activePage, setActivePage, isMobileOpen, setIsMobileOpen, settings = {}, onLogout }) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'members', label: 'Data Kader & KTA', icon: Users },
@@ -46,8 +47,9 @@ export default function Sidebar({ activePage, setActivePage, isMobileOpen, setIs
         {/* Header / Logo */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-0.5 shadow-lg shadow-emerald-900/40 flex items-center justify-center font-black text-white text-lg">
-              ★
+            <div className="flex items-center -space-x-1">
+              <img src="/logo-ipnu.png" alt="Logo IPNU" className="w-9 h-9 object-contain drop-shadow-lg" />
+              <img src="/logo-ippnu.png" alt="Logo IPPNU" className="w-9 h-9 object-contain drop-shadow-lg" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -112,6 +114,16 @@ export default function Sidebar({ activePage, setActivePage, isMobileOpen, setIs
               <span className="font-semibold text-emerald-300">{settings.period || '2025 - 2027'}</span>
             </div>
           </div>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full mt-2 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all border border-slate-800"
+            >
+              <LogOut className="w-4 h-4" />
+              Keluar
+            </button>
+          )}
         </div>
 
       </aside>

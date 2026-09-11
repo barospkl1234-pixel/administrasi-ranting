@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import Letters from './pages/Letters';
@@ -14,6 +15,7 @@ export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [activeOrg, setActiveOrg] = useState('ALL'); // 'ALL' | 'IPNU' | 'IPPNU'
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('siad_logged_in') === 'true');
   const [settings, setSettings] = useState({
     villageName: "Kalibaros",
     subDistrict: "Pekalongan Timur",
@@ -57,6 +59,20 @@ export default function App() {
     }
   };
 
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('siad_logged_in');
+    setIsLoggedIn(false);
+    setActivePage('dashboard');
+  };
+
+  if (!isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar Navigation */}
@@ -66,6 +82,7 @@ export default function App() {
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
         settings={settings}
+        onLogout={handleLogout}
       />
 
       {/* Main Layout Area */}
