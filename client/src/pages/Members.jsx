@@ -30,6 +30,12 @@ export default function Members({ activeOrg, settings = {} }) {
   const [cadreFilter, setCadreFilter] = useState('');
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
 
+  // Default tampilan kartu (grid) di layar mobile; pengguna tetap bisa paksa tabel
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    if (mq.matches) setViewMode('grid');
+  }, []);
+
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

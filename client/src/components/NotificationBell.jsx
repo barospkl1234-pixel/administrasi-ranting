@@ -88,13 +88,19 @@ export default function NotificationBell({ setActivePage }) {
     };
   }, []);
 
-  // Kunci scroll body saat bottom-sheet terbuka di mobile
+  // Kunci scroll body saat bottom-sheet terbuka di mobile (ikut perubahan rotasi/resize)
   useEffect(() => {
     if (!open) return;
-    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
-    if (!isMobile) return;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = 'unset'; };
+    const applyLock = () => {
+      const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
+      document.body.style.overflow = isMobile ? 'hidden' : 'unset';
+    };
+    applyLock();
+    window.addEventListener('resize', applyLock);
+    return () => {
+      window.removeEventListener('resize', applyLock);
+      document.body.style.overflow = 'unset';
+    };
   }, [open]);
 
   const enableNotification = () => {
@@ -223,7 +229,7 @@ export default function NotificationBell({ setActivePage }) {
               onClick={() => setOpen(false)}
             />
             <div
-              className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl border-t border-slate-100 flex flex-col max-h-[85vh] overflow-hidden"
+              className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl border-t border-slate-100 flex flex-col max-h-[85vh] overflow-hidden pb-[env(safe-area-inset-bottom)]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="pt-2.5 pb-1 flex justify-center shrink-0">
@@ -260,7 +266,7 @@ export default function NotificationBell({ setActivePage }) {
       </div>
 
       {/* Toasts */}
-      <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-[100] space-y-2 no-print sm:w-80">
+      <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 left-4 sm:left-auto z-[100] space-y-2 no-print sm:w-80">
         {toasts.map((t) => (
           <div
             key={t.id}

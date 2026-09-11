@@ -33,7 +33,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       {/* Modal Container */}
       <div className="flex min-h-screen items-end sm:items-center justify-center p-3 sm:p-4 text-center sm:text-left">
         <div 
-          className={`relative flex flex-col transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full ${maxWidth} sm:my-8 h-auto max-h-[92vh] border border-slate-100 animate-scale-up`}
+          className={`relative flex flex-col transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white text-left shadow-2xl transition-all w-full ${maxWidth} sm:my-8 h-auto max-h-[92vh] border border-slate-100 animate-scale-up`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -52,7 +52,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
           </div>
 
           {/* Body */}
-          <div className="modal-body px-4 py-4 sm:px-6 sm:py-5 overflow-y-auto flex-1">
+          <div className="modal-body px-4 py-4 sm:px-6 sm:py-5 overflow-y-auto flex-1 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
             {children}
           </div>
         </div>

@@ -304,7 +304,66 @@ export default function Finances({ activeOrg, settings = {} }) {
           <p className="text-xs text-slate-500 mt-1">Catat pemasukan atau pengeluaran kas pertama Anda sekarang.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <>
+          {/* Mobile Card View */}
+          <div className="space-y-3 md:hidden">
+            {finances.map((f) => {
+              const isIncome = f.type === 'income';
+              return (
+                <div key={f.id} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        isIncome ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                      }`}>
+                        {isIncome ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 ${
+                        f.organization === 'IPNU' ? 'bg-emerald-100 text-emerald-800' :
+                        f.organization === 'IPPNU' ? 'bg-amber-100 text-amber-800' :
+                        'bg-teal-100 text-teal-800'
+                      }`}>
+                        {f.organization}
+                      </span>
+                    </div>
+                    <span className={`shrink-0 text-sm font-bold font-mono break-all text-right leading-tight ${
+                      isIncome ? 'text-emerald-600' : 'text-rose-600'
+                    }`}>
+                      {isIncome ? '+' : '-'}{formatRupiah(f.amount)}
+                    </span>
+                  </div>
+                  <div className="mt-2.5 space-y-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-800 break-words">{f.description}</p>
+                    <p className="text-xs text-slate-500 break-words">{f.category} • {formatDate(f.date)}</p>
+                    <p className="text-[10px] font-mono text-slate-400 break-words">
+                      {f.receiptNo || f.id}{f.receiptUrl ? (f.receiptUrl.endsWith('.pdf') ? ' • Bukti PDF' : ' • Bukti Gambar') : ''}
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-1.5 flex-wrap">
+                    {f.receiptUrl && (
+                      <button
+                        onClick={() => handleViewReceipt(f)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors"
+                      >
+                        {f.receiptUrl.endsWith('.pdf') ? <FileText className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        Lihat Bukti
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(f.id, f.description)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-600 hover:text-white transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200">
@@ -379,6 +438,7 @@ export default function Finances({ activeOrg, settings = {} }) {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* MODAL: TAMBAH TRANSAKSI KAS */}

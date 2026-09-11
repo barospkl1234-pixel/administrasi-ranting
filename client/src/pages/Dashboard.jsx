@@ -178,16 +178,16 @@ export default function Dashboard({ activeOrg, setActivePage, settings = {} }) {
                     key={evt.id}
                     className="p-4 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                           evt.organization === 'IPNU' ? 'bg-emerald-100 text-emerald-800' :
                           evt.organization === 'IPPNU' ? 'bg-amber-100 text-amber-800' :
                           'bg-teal-100 text-teal-800'
                         }`}>
                           {evt.organization}
                         </span>
-                        <h4 className="text-sm font-bold text-slate-800">{evt.title}</h4>
+                        <h4 className="text-sm font-bold text-slate-800 min-w-0 truncate">{evt.title}</h4>
                       </div>
                       <p className="text-xs text-slate-600 flex items-center gap-3">
                         <span className="flex items-center gap-1">

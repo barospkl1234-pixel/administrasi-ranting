@@ -418,7 +418,71 @@ export default function Letters({ activeOrg, settings = {} }) {
           <p className="text-xs text-slate-500 mt-1">Gunakan tombol "Buat Surat Baru" untuk mencetak atau mengarsipkan surat.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <>
+          {/* Mobile Card View */}
+          <div className="space-y-3 md:hidden">
+            {letters.map((l) => (
+              <div key={l.id} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="font-mono font-bold text-slate-800 text-xs break-all min-w-0">
+                    {l.letterNumber}
+                    <p className="text-[10px] font-sans font-medium text-slate-400 mt-0.5">ID: {l.id}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                      l.organization === 'IPNU' ? 'bg-emerald-100 text-emerald-800' :
+                      l.organization === 'IPPNU' ? 'bg-amber-100 text-amber-800' :
+                      'bg-teal-100 text-teal-800'
+                    }`}>
+                      {l.organization}
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      l.type === 'Keluar' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                    }`}>
+                      {l.type}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-2.5 space-y-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 break-words">{l.subject}</p>
+                  <p className="text-xs text-slate-500 break-words line-clamp-2">{l.content}</p>
+                  <p className="text-xs text-slate-500 font-medium break-words">Tujuan: {l.recipientOrSender || '-'}</p>
+                  <p className="text-[11px] text-slate-400">{formatDate(l.date)}</p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-1.5 flex-wrap">
+                  {l.attachment && l.attachment.dataUrl && (
+                    <button
+                      onClick={() => openViewer(l)}
+                      className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors"
+                      title="Lihat Lampiran"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setSelectedLetter(l);
+                      setIsPreviewModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    Lihat & Cetak
+                  </button>
+                  <button
+                    onClick={() => handleDelete(l.id, l.subject)}
+                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                    title="Hapus"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200">
@@ -507,6 +571,7 @@ export default function Letters({ activeOrg, settings = {} }) {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* MODAL: BUAT SURAT BARU & TEMPLATE GENERATOR */}
@@ -1064,8 +1129,9 @@ export default function Letters({ activeOrg, settings = {} }) {
 
             {selectedLetter.template === 'undangan-ra' ? (
               /* ===================== LAYOUT PANITIA RA (PAN-UNDANGAN RA.docx) ===================== */
+              <div className="overflow-x-auto">
               <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto"
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto min-w-[760px]"
                 style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* KOP SURAT PANITIA RA (identik dengan template standar) */}
@@ -1191,10 +1257,12 @@ export default function Letters({ activeOrg, settings = {} }) {
                   </div>
                 </div>
               </div>
+              </div>
             ) : (
               /* ===================== LAYOUT SURAT RESMI STANDAR (konsisten dgn format Pan. RA) ===================== */
+              <div className="overflow-x-auto">
               <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto"
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto min-w-[760px]"
                 style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* KOP SURAT RESMI (identik dengan template Pan. RA) */}
@@ -1317,6 +1385,7 @@ export default function Letters({ activeOrg, settings = {} }) {
                   </div>
                 </div>
 
+              </div>
               </div>
             )}
           </div>

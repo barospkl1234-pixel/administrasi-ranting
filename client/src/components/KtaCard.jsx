@@ -51,7 +51,7 @@ export default function KtaCard({ member, settings = {} }) {
       </div>
 
       {/* KTA Printable Container - Standard Credit Card Ratio (85.6mm x 53.98mm ~ 3.37in x 2.125in) */}
-      <div className="kta-print-card w-[360px] sm:w-[400px] h-[240px] sm:h-[250px] relative rounded-2xl overflow-hidden shadow-2xl transition-all select-none border border-slate-200">
+      <div className="kta-print-card w-[min(92vw,360px)] sm:w-[400px] h-[min(61vw,250px)] sm:h-[250px] relative rounded-2xl overflow-hidden shadow-2xl transition-all select-none border border-slate-200">
         
         {/* ================= FRONT SIDE ================= */}
         {side === 'front' && (

@@ -36,6 +36,7 @@ export default function Events({ activeOrg, settings = {} }) {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [memberSearch, setMemberSearch] = useState('');
+  const [qrSize, setQrSize] = useState(220);
 
   // Form State
   const initialForm = {
@@ -93,6 +94,7 @@ export default function Events({ activeOrg, settings = {} }) {
 
   const handleOpenQr = (evt) => {
     setSelectedEvent(evt);
+    setQrSize(typeof window !== 'undefined' ? Math.max(140, Math.min(220, Math.round(window.innerWidth * 0.6))) : 220);
     setIsQrModalOpen(true);
   };
 
@@ -485,7 +487,7 @@ export default function Events({ activeOrg, settings = {} }) {
             <div className="p-4 bg-white rounded-2xl shadow-xl border-4 border-emerald-600 mb-4">
               <QRCodeSVG 
                 value={JSON.stringify({ eventId: selectedEvent.id, title: selectedEvent.title, date: selectedEvent.date })}
-                size={220}
+                size={qrSize}
                 level="H"
               />
             </div>
@@ -519,7 +521,7 @@ export default function Events({ activeOrg, settings = {} }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Penyelenggara *</label>
               <select
@@ -545,7 +547,7 @@ export default function Events({ activeOrg, settings = {} }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Waktu Pelaksanaan</label>
               <input
