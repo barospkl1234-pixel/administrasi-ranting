@@ -72,7 +72,7 @@ export default function Sidebar({ activePage, setActivePage, isMobileOpen, setIs
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto overscroll-contain">
           <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Menu Utama
           </div>

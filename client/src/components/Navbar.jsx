@@ -45,10 +45,10 @@ export default function Navbar({ activePage, activeOrg, setActiveOrg, settings =
         </div>
 
         {/* Right Side: Org Filter Tabs & Islamic Date Banner */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
           
           {/* Organization Switcher Pills */}
-          <div className="flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 text-[11px] sm:text-xs font-bold">
+          <div className="flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 text-[11px] sm:text-xs font-bold max-w-full overflow-x-auto -mx-1 px-1 flex-nowrap sm:flex-wrap sm:overflow-visible">
             <button
               onClick={() => setActiveOrg('ALL')}
               className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all whitespace-nowrap ${

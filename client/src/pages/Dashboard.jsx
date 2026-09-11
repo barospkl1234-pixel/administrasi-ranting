@@ -238,15 +238,15 @@ export default function Dashboard({ activeOrg, setActivePage, settings = {} }) {
                 const isIncome = trx.type === 'income';
                 return (
                   <div key={trx.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         isIncome ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                       }`}>
                         {isIncome ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{trx.description}</p>
-                        <p className="text-xs text-slate-500">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{trx.description}</p>
+                        <p className="text-xs text-slate-500 truncate">
                           {formatDate(trx.date)} • <span className="font-medium">{trx.organization}</span> • {trx.category}
                         </p>
                       </div>

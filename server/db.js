@@ -71,6 +71,8 @@ const DEFAULT_STORE = {
     codeIppnu: "7455",
     leaderIpnu: "Rekan Ahmad Fauzi",
     leaderIppnu: "Rekanita Siti Nur Halizah",
+    viceLeaderIpnu: "",
+    viceLeaderIppnu: "",
     secretaryIpnu: "Rekan Muhammad Rifqi",
     secretaryIppnu: "Rekanita Dewi Lestari",
     treasurerIpnu: "Rekan Bagus Setiawan",

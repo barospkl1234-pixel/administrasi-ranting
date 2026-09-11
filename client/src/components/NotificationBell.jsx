@@ -112,7 +112,7 @@ export default function NotificationBell({ setActivePage }) {
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
+          <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-emerald-50/60">
               <h3 className="text-sm font-bold text-emerald-900">Jadwal Agenda</h3>
               <span className="text-[11px] text-slate-500">Otomatis diperbarui</span>
@@ -204,11 +204,11 @@ export default function NotificationBell({ setActivePage }) {
         )}
       </div>
 
-      <div className="fixed bottom-4 right-4 z-[100] space-y-2 no-print">
+      <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-[100] space-y-2 no-print sm:w-80">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="w-80 bg-white rounded-xl shadow-2xl border-l-4 border-orange-500 overflow-hidden"
+            className="w-full bg-white rounded-xl shadow-2xl border-l-4 border-orange-500 overflow-hidden"
             style={{ animation: 'siadSlideInUp 0.25s ease-out' }}
           >
             <div className="px-4 py-3">

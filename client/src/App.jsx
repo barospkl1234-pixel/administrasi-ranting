@@ -22,7 +22,9 @@ export default function App() {
     codeIpnu: "7354",
     codeIppnu: "7455",
     leaderIpnu: "Ahmad Fauzi",
-    leaderIppnu: "Siti Nur Halizah"
+    leaderIppnu: "Siti Nur Halizah",
+    viceLeaderIpnu: "",
+    viceLeaderIppnu: ""
   });
 
   useEffect(() => {

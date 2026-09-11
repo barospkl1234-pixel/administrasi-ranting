@@ -140,7 +140,7 @@ export default function Inventory() {
         </div>
 
         {/* Condition Filter */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setConditionFilter('')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
