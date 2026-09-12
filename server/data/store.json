@@ -287,6 +287,18 @@
   ],
   "finances": [
     {
+      "id": "TRX-1789184381031288601",
+      "date": "2026-09-12",
+      "organization": "BERSAMA",
+      "type": "expense",
+      "category": "Sewa Tempat & Sound",
+      "amount": 200000,
+      "description": "wfghj",
+      "receiptNo": "KAS-OUT-1789184381031288601",
+      "receiptUrl": "/uploads/1789184381021-122596169.jpg",
+      "createdAt": "2026-09-12T03:39:41.031Z"
+    },
+    {
       "id": "TRX-007",
       "date": "2026-09-09",
       "organization": "BERSAMA",

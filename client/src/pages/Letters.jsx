@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { 
   Mail, 
   Plus, 
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
-import { formatDate, getHijriDateString } from '../utils/formatters';
+import { formatDate, getHijriDateString, todayWIBString } from '../utils/formatters';
 import { fileToDataUrl } from '../utils/files';
 import { printToPdf } from '../utils/print';
 
@@ -89,7 +89,7 @@ export default function Letters({ activeOrg, settings = {} }) {
     letterNumber: '',
     subject: 'Undangan Pertemuan Rutin Selapanan',
     recipientOrSender: 'Seluruh Anggota & Kader Ranting',
-    date: new Date().toISOString().split('T')[0],
+    date: todayWIBString(),
     eventName: 'Rapat Anggota IV Dan Konferensi IV',
     eventDayDate: 'Rabu, 29 Oktober 2025',
     eventTime: '18.30 WIB - selesai',
@@ -107,17 +107,24 @@ export default function Letters({ activeOrg, settings = {} }) {
     notes: "Demikian surat undangan ini kami sampaikan, atas perhatian dan kehadirannya kami ucapkan terima kasih."
   };
 
-  const [formData, setFormData] = useState(initialForm);
+const [formData, setFormData] = useState(initialForm);
+
+  // Daftar surat LENGKAP (tidak difilter) untuk menghitung nomor urut surat Pan. RA
+  const allLettersRef = useRef([]);
 
   const loadLetters = async () => {
     try {
       setLoading(true);
-      const res = await api.getLetters({
-        org: activeOrg,
-        type: typeFilter,
-        search
-      });
+      const [res, allRes] = await Promise.all([
+        api.getLetters({
+          org: activeOrg,
+          type: typeFilter,
+          search
+        }),
+        api.getLetters()
+      ]);
       setLetters(res.data || []);
+      allLettersRef.current = allRes.data || [];
     } catch (err) {
       console.error(err);
     } finally {
@@ -142,7 +149,7 @@ export default function Letters({ activeOrg, settings = {} }) {
   // Compose nomor surat khas Panitia Rapat Anggota (Pan. RA):
   // 001/PR/Pan. RA/A/7354-7455/IV/X/2025
   const composeRaNumber = (category = 'A', edition = formData.raEdition || 'IV', dateValue = formData.date) => {
-    const raCount = letters.filter(l => l.type === 'Keluar' && l.dept === 'Pan. RA').length + 1;
+    const raCount = allLettersRef.current.filter(l => l.type === 'Keluar' && l.dept === 'Pan. RA').length + 1;
     const seq = String(raCount).padStart(3, '0');
     const d = dateValue ? new Date(dateValue) : new Date();
     const dateObj = isNaN(d.getTime()) ? new Date() : d;
@@ -154,7 +161,7 @@ export default function Letters({ activeOrg, settings = {} }) {
     setFormData({
       ...initialForm,
       organization: org,
-      committeeChairman: settings.treasurerIpnu || 'LAELATUL FIRDAUS',
+      committeeChairman: org === 'IPPNU' ? (settings.viceLeaderIppnu || 'LAELATUL FIRDAUS') : (settings.viceLeaderIpnu || 'LAELATUL FIRDAUS'),
       committeeSecretary: settings.secretaryIpnu || 'MUHAMMAD IRFANUDIN',
       chairmanIpnu: settings.leaderIpnu || 'IDZNIRRAHMAN AL-HAZMI',
       chairmanIppnu: settings.leaderIppnu || 'NAURAH SALMA',
@@ -295,7 +302,7 @@ export default function Letters({ activeOrg, settings = {} }) {
           letterNumber: '',
           recipientOrSender: '',
           subject: f.name.replace(/\.[^.]+$/, ''),
-          date: new Date().toISOString().split('T')[0],
+          date: todayWIBString(),
         };
       })
     );

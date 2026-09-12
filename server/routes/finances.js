@@ -102,6 +102,25 @@ router.post('/', wrap(async (req, res) => {
   res.status(201).json({ success: true, data: newTransaction, message: 'Transaksi kas berhasil dicatat' });
 }));
 
+// UPDATE transaction (misal: lampirkan bukti nota/kwitansi pada pengeluaran)
+router.put('/:id', wrap(async (req, res) => {
+  const db = await readDB();
+  const finances = db.finances || [];
+  const index = finances.findIndex(f => f.id === req.params.id);
+
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan' });
+  }
+
+  const updatable = ['date', 'organization', 'type', 'category', 'amount', 'description', 'receiptNo', 'receiptUrl'];
+  updatable.forEach(key => {
+    if (req.body[key] !== undefined) finances[index][key] = req.body[key];
+  });
+
+  await writeDBChecked(db);
+  res.json({ success: true, data: finances[index], message: 'Transaksi kas berhasil diperbarui' });
+}));
+
 // DELETE transaction
 router.delete('/:id', wrap(async (req, res) => {
   const db = await readDB();

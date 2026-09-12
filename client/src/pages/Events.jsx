@@ -19,7 +19,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
-import { formatDate, formatDateWithDay } from '../utils/formatters';
+import { formatDate, formatDateWithDay, todayWIBString } from '../utils/formatters';
 import { getEventStart, isUpcoming } from '../utils/notifications';
 
 export default function Events({ activeOrg, settings = {} }) {
@@ -42,7 +42,7 @@ export default function Events({ activeOrg, settings = {} }) {
   const initialForm = {
     title: 'Rutinan Selapanan & Pembacaan Diba\'iyah',
     organization: activeOrg === 'ALL' ? 'BERSAMA' : activeOrg,
-    date: new Date().toISOString().split('T')[0],
+    date: todayWIBString(),
     time: '19:30 WIB - Selesai',
     location: 'Gedung TPQ Baiturrohim Krajan',
     pic: 'Rekan Ahmad Fauzi & Rekanita Siti',

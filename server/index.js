@@ -57,7 +57,9 @@ const upload = multer({
     if (allowed.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Format file harus JPG, PNG, WEBP, atau PDF'));
+      const fileError = new Error('Format file harus JPG, PNG, WEBP, atau PDF');
+      fileError.status = 400;
+      cb(fileError);
     }
   }
 });
@@ -113,8 +115,42 @@ function requireAuth(req, res, next) {
 
 // Middleware
 app.use(cors());
+// Supaya req.ip berisi alamat klien asli saat di belakang proxy (Vercel)
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate-limit sederhana untuk /api/auth/login (mencegah brute-force)
+const loginAttempts = new Map();
+function trackLogin(req, res, next) {
+  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+  const now = Date.now();
+  let entry = loginAttempts.get(ip);
+  if (!entry || now > entry.windowStart + 15 * 60 * 1000) {
+    entry = { windowStart: now, count: 0, blockedUntil: 0 };
+    loginAttempts.set(ip, entry);
+  }
+  if (entry.blockedUntil > now) {
+    const mins = Math.ceil((entry.blockedUntil - now) / 60000);
+    return res.status(429).json({ success: false, message: `Terlalu banyak percobaan login. Coba lagi ${mins} menit lagi.` });
+  }
+  req.loginEntry = entry;
+  next();
+}
+function recordLoginFail(req) {
+  const entry = req.loginEntry;
+  if (!entry) return;
+  entry.count += 1;
+  if (entry.count >= 5) {
+    entry.blockedUntil = Date.now() + 15 * 60 * 1000;
+  }
+}
+function clearLoginFail(req) {
+  const entry = req.loginEntry;
+  if (!entry) return;
+  entry.count = 0;
+  entry.blockedUntil = 0;
+}
 
 // Serve uploaded photos: dari Vercel KV/PostgreSQL (persisten) atau folder statis (lokal)
 if (useRemoteStorage) {
@@ -138,12 +174,14 @@ if (useRemoteStorage) {
 // Photo/file upload endpoint (dibawah auth — lihat pemanggilannya setelah requireAuth)
 
 // ----- Auth routes -----
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', trackLogin, async (req, res) => {
   await dbReady;
   const { username, password } = req.body || {};
   if (username !== AUTH_USERNAME || password !== AUTH_PASSWORD) {
+    recordLoginFail(req);
     return res.status(401).json({ success: false, message: 'Username atau password salah' });
   }
+  clearLoginFail(req);
   const token = signToken(username);
   res.json({ success: true, token, message: 'Login berhasil' });
 });
@@ -275,7 +313,7 @@ app.use('/api/settings', settingsRouter);
 const clientDist = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDist));
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api/')) return next();
+  if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) return next();
   res.sendFile(path.join(clientDist, 'index.html'), (err) => {
     if (err) res.status(404).send('API Server is running. Client not yet built.');
   });

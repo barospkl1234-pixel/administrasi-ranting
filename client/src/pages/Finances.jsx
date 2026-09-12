@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Wallet, 
   Plus, 
@@ -16,11 +16,12 @@ import {
   FileText,
   Image,
   Eye,
+  Upload,
   X
 } from 'lucide-react';
 import { api } from '../utils/api';
 import Modal from '../components/Modal';
-import { formatRupiah, formatDate } from '../utils/formatters';
+import { formatRupiah, formatDate, todayWIBString } from '../utils/formatters';
 import { printToPdf } from '../utils/print';
 
 export default function Finances({ activeOrg, settings = {} }) {
@@ -35,10 +36,15 @@ export default function Finances({ activeOrg, settings = {} }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [receiptViewData, setReceiptViewData] = useState(null);
+  const [attachTarget, setAttachTarget] = useState(null);
+  const [attachReceiptNo, setAttachReceiptNo] = useState('');
+  const [attachReceiptFile, setAttachReceiptFile] = useState(null);
+  const [attachReceiptPreview, setAttachReceiptPreview] = useState('');
+  const [attaching, setAttaching] = useState(false);
 
   // Form State
   const initialForm = {
-    date: new Date().toISOString().split('T')[0],
+    date: todayWIBString(),
     organization: activeOrg === 'ALL' ? 'IPNU' : activeOrg,
     type: 'income',
     category: 'Iuran Rutin Anggota',
@@ -50,6 +56,13 @@ export default function Finances({ activeOrg, settings = {} }) {
   const [formData, setFormData] = useState(initialForm);
   const [receiptPreview, setReceiptPreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const receiptPreviewRef = useRef('');
+  const attachPreviewRef = useRef('');
+
+  useEffect(() => () => {
+    if (receiptPreviewRef.current) URL.revokeObjectURL(receiptPreviewRef.current);
+    if (attachPreviewRef.current) URL.revokeObjectURL(attachPreviewRef.current);
+  }, []);
 
   const loadFinances = async () => {
     try {
@@ -98,7 +111,14 @@ export default function Finances({ activeOrg, settings = {} }) {
       return;
     }
     setFormData({ ...formData, receiptFile: file });
-    setReceiptPreview(file.type === 'application/pdf' ? 'pdf' : URL.createObjectURL(file));
+    if (file.type === 'application/pdf') {
+      setReceiptPreview('pdf');
+    } else {
+      if (receiptPreviewRef.current) URL.revokeObjectURL(receiptPreviewRef.current);
+      const previewUrl = URL.createObjectURL(file);
+      receiptPreviewRef.current = previewUrl;
+      setReceiptPreview(previewUrl);
+    }
   };
 
   const handleSubmitAdd = async (e) => {
@@ -132,6 +152,58 @@ export default function Finances({ activeOrg, settings = {} }) {
       type: transaction.receiptUrl.endsWith('.pdf') ? 'pdf' : 'image',
       description: transaction.description
     });
+  };
+
+  const handleAttachOpen = (transaction) => {
+    setAttachTarget(transaction);
+    setAttachReceiptNo(transaction.receiptNo || '');
+    setAttachReceiptFile(null);
+    setAttachReceiptPreview('');
+  };
+
+  const handleAttachFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.type)) {
+      alert('Format file harus JPG, PNG, WEBP, atau PDF');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Ukuran file maksimal 10 MB');
+      return;
+    }
+    setAttachReceiptFile(file);
+    if (file.type === 'application/pdf') {
+      setAttachReceiptPreview('pdf');
+    } else {
+      if (attachPreviewRef.current) URL.revokeObjectURL(attachPreviewRef.current);
+      const previewUrl = URL.createObjectURL(file);
+      attachPreviewRef.current = previewUrl;
+      setAttachReceiptPreview(previewUrl);
+    }
+  };
+
+  const handleAttachSubmit = async (e) => {
+    e.preventDefault();
+    if (!attachTarget) return;
+    try {
+      setAttaching(true);
+      let receiptUrl = attachTarget.receiptUrl || '';
+      if (attachReceiptFile) {
+        const uploadRes = await api.uploadPhoto(attachReceiptFile);
+        receiptUrl = uploadRes.url || '';
+      }
+      await api.updateFinance(attachTarget.id, { receiptUrl, receiptNo: attachReceiptNo });
+      setAttachTarget(null);
+      setAttachReceiptFile(null);
+      setAttachReceiptPreview('');
+      loadFinances();
+    } catch (err) {
+      alert('Gagal melampirkan bukti: ' + err.message);
+    } finally {
+      setAttaching(false);
+    }
   };
 
   const handleDelete = async (id, desc) => {
@@ -340,7 +412,7 @@ export default function Finances({ activeOrg, settings = {} }) {
                     </p>
                   </div>
                   <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-1.5 flex-wrap">
-                    {f.receiptUrl && (
+                    {f.receiptUrl ? (
                       <button
                         onClick={() => handleViewReceipt(f)}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors"
@@ -348,7 +420,15 @@ export default function Finances({ activeOrg, settings = {} }) {
                         {f.receiptUrl.endsWith('.pdf') ? <FileText className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         Lihat Bukti
                       </button>
-                    )}
+                    ) : !isIncome ? (
+                      <button
+                        onClick={() => handleAttachOpen(f)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold hover:bg-amber-600 hover:text-white transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        Upload Bukti
+                      </button>
+                    ) : null}
                     <button
                       onClick={() => handleDelete(f.id, f.description)}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-600 hover:text-white transition-colors"
@@ -390,6 +470,12 @@ export default function Finances({ activeOrg, settings = {} }) {
                             {f.receiptUrl.endsWith('.pdf') ? 'PDF' : 'Gambar'}
                           </span>
                         )}
+                        {!f.receiptUrl && !isIncome && (
+                          <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[9px] font-bold">
+                            <Upload className="w-2.5 h-2.5" />
+                            Belum ada bukti
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
@@ -413,7 +499,7 @@ export default function Finances({ activeOrg, settings = {} }) {
                       </td>
                       <td className="px-5 py-3.5 text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          {f.receiptUrl && (
+                          {f.receiptUrl ? (
                             <button
                               onClick={() => handleViewReceipt(f)}
                               className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
@@ -421,7 +507,15 @@ export default function Finances({ activeOrg, settings = {} }) {
                             >
                               {f.receiptUrl.endsWith('.pdf') ? <FileText className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
-                          )}
+                          ) : !isIncome ? (
+                            <button
+                              onClick={() => handleAttachOpen(f)}
+                              className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-colors"
+                              title="Upload Bukti Nota / Kwitansi"
+                            >
+                              <Upload className="w-4 h-4" />
+                            </button>
+                          ) : null}
                           <button
                             onClick={() => handleDelete(f.id, f.description)}
                             className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
@@ -673,15 +767,19 @@ export default function Finances({ activeOrg, settings = {} }) {
             <div className="grid grid-cols-2 text-center pt-8 text-[11px]">
               <div>
                 <p>Mengetahui,</p>
-                <p className="font-semibold mt-1">Ketua Mandataris</p>
+                <p className="font-semibold mt-1">Ketua Mandataris {activeOrg === 'IPPNU' ? 'IPPNU' : 'IPNU'}</p>
                 <div className="h-16" />
-                <p className="font-bold underline">{settings.leaderIpnu || 'Ahmad Fauzi'}</p>
+                <p className="font-bold underline">
+                  {activeOrg === 'IPPNU' ? (settings.leaderIppnu || 'Siti Nur Halizah') : (settings.leaderIpnu || 'Ahmad Fauzi')}
+                </p>
               </div>
               <div>
                 <p>{settings.villageName || 'Kalibaros'}, {formatDate(new Date().toISOString())}</p>
-                <p className="font-semibold mt-1">Bendahara Mandataris</p>
+                <p className="font-semibold mt-1">Bendahara Mandataris {activeOrg === 'IPPNU' ? 'IPPNU' : 'IPNU'}</p>
                 <div className="h-16" />
-                <p className="font-bold underline">{settings.treasurerIpnu || 'Bagus Setiawan'}</p>
+                <p className="font-bold underline">
+                  {activeOrg === 'IPPNU' ? (settings.treasurerIppnu || 'Anisa Rahmawati') : (settings.treasurerIpnu || 'Bagus Setiawan')}
+                </p>
               </div>
             </div>
 
@@ -713,6 +811,97 @@ export default function Finances({ activeOrg, settings = {} }) {
               />
             )}
           </div>
+        )}
+      </Modal>
+
+      {/* MODAL: LAMPIRKAN/UPLOAD BUKTI NOTA-KWITANSI PENGELUARAN */}
+      <Modal
+        isOpen={!!attachTarget}
+        onClose={() => setAttachTarget(null)}
+        title="Lampirkan Bukti Nota / Kwitansi"
+        maxWidth="max-w-lg"
+      >
+        {attachTarget && (
+          <form onSubmit={handleAttachSubmit} className="space-y-4">
+            <div className="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/70">
+              <p className="text-xs font-bold text-slate-700">{attachTarget.description}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {attachTarget.category} • Pengeluaran {formatRupiah(attachTarget.amount)} ({formatDate(attachTarget.date)})
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">No. Nota / Kwitansi (Opsional)</label>
+              <input
+                type="text"
+                value={attachReceiptNo}
+                onChange={(e) => setAttachReceiptNo(e.target.value)}
+                placeholder={attachTarget.receiptNo || 'mis. KWS-001 / NOTA-001'}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-rose-500" />
+                File Bukti Nota / Kwitansi
+                {attachTarget.receiptUrl && (
+                  <span className="text-[10px] font-normal text-slate-400">(sudah ada, abaikan jika tidak diganti)</span>
+                )}
+              </label>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 flex items-center justify-center gap-2 px-4 py-4 border-2 border-dashed border-slate-300 rounded-xl bg-white hover:bg-slate-50 cursor-pointer transition-colors">
+                  <Upload className="w-4 h-4 text-slate-400" />
+                  <span className="text-xs text-slate-500 font-medium">
+                    {attachReceiptFile ? attachReceiptFile.name : 'Klik untuk pilih gambar atau PDF...'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={handleAttachFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {attachReceiptPreview && (
+                  <div className="relative shrink-0">
+                    {attachReceiptPreview === 'pdf' ? (
+                      <div className="w-16 h-16 bg-rose-100 rounded-lg flex flex-col items-center justify-center border border-rose-200">
+                        <FileText className="w-6 h-6 text-rose-500" />
+                        <span className="text-[8px] font-bold text-rose-600 mt-0.5">PDF</span>
+                      </div>
+                    ) : (
+                      <img src={attachReceiptPreview} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setAttachReceiptFile(null); setAttachReceiptPreview(''); }}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1.5">Format: JPG, PNG, WEBP, atau PDF. Maks 10 MB.</p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAttachTarget(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={attaching}
+                className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-sm disabled:opacity-60"
+              >
+                {attaching ? 'Mengunggah...' : 'Simpan Bukti'}
+              </button>
+            </div>
+          </form>
         )}
       </Modal>
 

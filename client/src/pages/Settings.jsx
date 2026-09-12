@@ -41,8 +41,20 @@ export default function Settings({ settings, onSettingsUpdated }) {
   };
 
   // Download Backup JSON
-  const handleExportBackup = () => {
-    window.open('/api/settings/export-backup', '_blank');
+  const handleExportBackup = async () => {
+    try {
+      const blob = await api.exportBackup();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-ipnu-ippnu-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      alert('Gagal mengunduh backup: ' + err.message);
+    }
   };
 
   // Handle Import Backup

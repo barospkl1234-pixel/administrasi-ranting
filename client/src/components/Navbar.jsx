@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, Calendar } from 'lucide-react';
-import { formatDateWithDay, getHijriDateString } from '../utils/formatters';
+import { formatDateWithDay, getHijriDateString, todayWIBString } from '../utils/formatters';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar({ activePage, activeOrg, setActiveOrg, settings = {}, onMenuClick, setActivePage }) {
@@ -14,7 +14,7 @@ export default function Navbar({ activePage, activeOrg, setActiveOrg, settings =
     settings: 'Pengaturan Profil & Pimpinan Ranting'
   };
 
-  const todayIso = new Date().toISOString().split('T')[0];
+  const todayIso = todayWIBString();
   const masehiDate = formatDateWithDay(todayIso);
   const hijriDate = getHijriDateString(todayIso);
 

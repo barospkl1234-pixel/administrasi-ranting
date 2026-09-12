@@ -87,6 +87,7 @@ export const api = {
     return fetchApi(`/finances?${query}`);
   },
   createFinance: (data) => fetchApi('/finances', { method: 'POST', body: JSON.stringify(data) }),
+  updateFinance: (id, data) => fetchApi(`/finances/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteFinance: (id) => fetchApi(`/finances/${id}`, { method: 'DELETE' }),
 
   // Events & Attendance
@@ -114,5 +115,16 @@ export const api = {
   // Settings & Backup
   getSettings: () => fetchApi('/settings'),
   updateSettings: (data) => fetchApi('/settings', { method: 'PUT', body: JSON.stringify(data) }),
-  importBackup: (data) => fetchApi('/settings/import-backup', { method: 'POST', body: JSON.stringify(data) })
+  importBackup: (data) => fetchApi('/settings/import-backup', { method: 'POST', body: JSON.stringify(data) }),
+  exportBackup: async () => {
+    const token = getToken();
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${BASE_URL}/settings/export-backup`, { headers });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || 'Gagal mengunduh backup');
+    }
+    return response.blob();
+  }
 };

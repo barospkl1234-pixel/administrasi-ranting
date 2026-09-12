@@ -34,6 +34,11 @@ export function formatDateWithDay(dateString) {
   return `${dayName}, ${formatDate(dateString)}`;
 }
 
+// Tanggal hari ini format YYYY-MM-DD pada zona WIB (Asia/Jakarta)
+export function todayWIBString() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
 // Perkiraan konversi penanggalan Hijriyah untuk surat resmi
 export function getHijriDateString(dateString) {
   const date = dateString ? new Date(dateString) : new Date();

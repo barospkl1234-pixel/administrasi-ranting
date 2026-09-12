@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, 
   Search, 
@@ -64,6 +64,11 @@ export default function Members({ activeOrg, settings = {} }) {
   const [formData, setFormData] = useState(initialForm);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
+  const photoPreviewRef = useRef('');
+
+  useEffect(() => () => {
+    if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+  }, []);
 
   const loadMembers = async () => {
     try {
@@ -124,7 +129,10 @@ export default function Members({ activeOrg, settings = {} }) {
       return;
     }
     setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+    const previewUrl = URL.createObjectURL(file);
+    photoPreviewRef.current = previewUrl;
+    setPhotoPreview(previewUrl);
   };
 
   const uploadPhotoIfNeeded = async () => {
