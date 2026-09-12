@@ -16,7 +16,7 @@ router.get('/', wrap(async (req, res) => {
 const ALLOWED_SETTINGS = [
   'villageName', 'subDistrict', 'district', 'province', 'postCode', 'secretariatAddress',
   'period', 'codeIpnu', 'codeIppnu',
-  'leaderIpnu', 'leaderIppnu', 'viceLeaderIpnu', 'viceLeaderIppnu',
+  'leaderIpnu', 'leaderIppnu', 'leaderPhoneIpnu', 'leaderPhoneIppnu', 'viceLeaderIpnu', 'viceLeaderIppnu',
   'secretaryIpnu', 'secretaryIppnu', 'treasurerIpnu', 'treasurerIppnu',
   'cbpCommander', 'kppCommander', 'phoneContact', 'emailContact'
 ];

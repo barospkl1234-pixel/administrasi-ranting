@@ -83,7 +83,7 @@ router.post('/', wrap(async (req, res) => {
   const extraFields = [
     'template', 'dept', 'eventName', 'eventDayDate', 'eventTime', 'eventLocation',
     'greetingCall', 'committeeChairman', 'committeeSecretary', 'chairmanIpnu', 'chairmanIppnu',
-    'raEdition', 'kopLine1', 'kopLine2', 'kopLine3', 'kopAddress', 'kopContact', 'kopEmail',
+    'raEdition', 'kopPanitia', 'kopLine1', 'kopLine2', 'kopLine3', 'kopAddress', 'kopContact', 'kopEmail',
     'notes', 'letterPlace', 'attachment'
   ];
   const extras = {};

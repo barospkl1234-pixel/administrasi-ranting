@@ -27,6 +27,8 @@ export default function App() {
     codeIppnu: "7455",
     leaderIpnu: "Ahmad Fauzi",
     leaderIppnu: "Siti Nur Halizah",
+    leaderPhoneIpnu: "",
+    leaderPhoneIppnu: "",
     viceLeaderIpnu: "",
     viceLeaderIppnu: ""
   });

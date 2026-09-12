@@ -1,4 +1,5 @@
-export function printToPdf(selector) {
+export function printToPdf(selector, options = {}) {
+  const pageSize = options.pageSize || 'A4 portrait';
   const printEl = document.querySelector(selector);
   if (!printEl) {
     window.print();
@@ -28,7 +29,7 @@ export function printToPdf(selector) {
     ${styles}
     <style>
       html, body { margin: 0 !important; padding: 0 !important; background: #ffffff !important; }
-      @page { size: A4 portrait; margin: 0 !important; }
+      @page { size: ${pageSize}; margin: 0 !important; }
       @media print {
         .print-container {
           width: 100% !important;

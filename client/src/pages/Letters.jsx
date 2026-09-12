@@ -27,7 +27,10 @@ const PdfViewer = lazy(() => import('../components/PdfViewer'));
 const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
 /* KOP SURAT RESMI — dipakai SERAGAM oleh semua template (mengikuti PAN-UNDANGAN RA.docx) */
-function KopSurat({ heading1, heading2, area, address, phone, email }) {
+/* Susunan baris kop: PIMPINAN RANTING / IKATAN PELAJAR NAHDLATUL ULAMA (utk IPNU) /
+   IKATAN PELAJAR PUTRI NAHDLATUL ULAMA (utk IPPNU) / BAROS KELURAHAN KALIBAROS — semua berwarna hijau,
+   dan setelah no HP dicantumkan nomor ketua */
+function KopSurat({ titleLines = [], address, phone, email, leaderPhone }) {
   return (
     <div className="relative border-b-4 border-double border-slate-800 pb-3 mb-7">
       {/* Kiri: Logo IPNU & IPPNU berdampingan */}
@@ -38,20 +41,16 @@ function KopSurat({ heading1, heading2, area, address, phone, email }) {
 
       {/* Kanan: Teks Kop rata kanan */}
       <div className="text-right pl-[6.2cm]">
-        <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '13.5px' }}>
-          {heading1}
-        </p>
-        <p className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '13.5px' }}>
-          {heading2}
-        </p>
-        <p className="font-bold uppercase leading-snug" style={{ fontSize: '11.5px', color: '#000000' }}>
-          {area}
-        </p>
+        {titleLines.map((line, i) => (
+          <p key={i} className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '14px' }}>
+            {line}
+          </p>
+        ))}
         <p className="font-bold text-[9.5px] leading-snug" style={{ color: '#000000' }}>
           {address}
         </p>
         <p className="font-bold text-[9.5px] leading-snug" style={{ color: '#000000' }}>
-          {phone}{' '}
+          {phone}{leaderPhone ? `, ${leaderPhone} (Ketua)` : ''}{' '}
           <img src="/icon-telp.png" alt="Telp" className="inline-block w-[11px] h-[11px] align-middle" />
         </p>
         <p className="font-bold text-[9.5px] leading-snug">
@@ -95,6 +94,7 @@ export default function Letters({ activeOrg, settings = {} }) {
     eventDayDate: 'Rabu, 29 Oktober 2025',
     eventTime: '18.30 WIB - selesai',
     eventLocation: "Gedung TPQ Baiturrohim Krajan",
+    kopPanitia: false, // true = kop tanda tangan memakai "PANITIA ACARA ..." (acara besar spt MAKESTA)
     greetingCall: 'Rekan',
     committeeChairman: 'LAELATUL FIRDAUS',
     committeeSecretary: 'MUHAMMAD IRFANUDIN',
@@ -158,7 +158,7 @@ export default function Letters({ activeOrg, settings = {} }) {
       committeeSecretary: settings.secretaryIpnu || 'MUHAMMAD IRFANUDIN',
       chairmanIpnu: settings.leaderIpnu || 'IDZNIRRAHMAN AL-HAZMI',
       chairmanIppnu: settings.leaderIppnu || 'NAURAH SALMA',
-      kopLine3: `${(settings.villageName || 'BAROS').toUpperCase()} KELURAHAN ${(settings.subDistrict || 'KALIBAROS').toUpperCase()}`
+      kopLine3: 'BAROS KELURAHAN KALIBAROS'
     });
     fetchSuggestedNumber(org, 'A', 'Sek');
     setIsAddModalOpen(true);
@@ -172,6 +172,7 @@ export default function Letters({ activeOrg, settings = {} }) {
         dept: 'Sek',
         subject: 'Undangan Pertemuan Rutin Selapanan',
         recipientOrSender: 'Seluruh Anggota & Kader Ranting',
+        kopPanitia: false,
         content: 'Sehubungan dengan pelaksanaan agenda rutin selapanan dan pembacaan Diba\'iyah Pimpinan Ranting, kami mengharap kehadiran Rekan/Rekanita pada:',
         notes: 'Mengingat pentingnya acara ini, mohon hadir tepat waktu dengan mengenakan pakaian sopan berpeci/berkerudung.'
       }));
@@ -183,6 +184,7 @@ export default function Letters({ activeOrg, settings = {} }) {
         category: 'B',
         subject: 'Permohonan Izin Peminjaman Tempat & Fasilitas',
         recipientOrSender: "Ta'mir Masjid & Pengelola TPQ",
+        kopPanitia: true,
         content: 'Dalam rangka menyelenggarakan kegiatan Masa Kesetiaan Anggota (MAKESTA) Pimpinan Ranting, kami bermaksud memohon izin peminjaman tempat aula dan sound system pada:',
         notes: 'Kami berkomitmen menjaga ketertiban, kebersihan, dan keamanan fasilitas yang dipinjam selama kegiatan berlangsung.'
       }));
@@ -195,6 +197,7 @@ export default function Letters({ activeOrg, settings = {} }) {
         category: 'A',
         subject: 'Surat Tugas / Mandat Delegasi Konferensi PAC',
         recipientOrSender: 'Panitia Pelaksana Konferancab PAC',
+        kopPanitia: false,
         content: 'Pimpinan Ranting dengan ini memberikan mandat penuh kepada kader yang namanya tercantum untuk menjadi delegasi resmi ranting pada acara:',
         notes: 'Demikian surat mandat ini diberikan agar dapat dipergunakan sebagaimana mestinya dengan penuh tanggung jawab.'
       }));
@@ -207,6 +210,7 @@ export default function Letters({ activeOrg, settings = {} }) {
         category: 'A',
         subject: 'Surat Keterangan Aktif Berorganisasi',
         recipientOrSender: 'Pihak yang Berkepentingan / Kampus / Sekolah',
+        kopPanitia: false,
         content: 'Yang bertanda tangan di bawah ini menerangkan dengan sesungguhnya bahwa nama kader yang bersangkutan adalah anggota aktif kepengurusan:',
         notes: 'Surat keterangan aktif ini diterbitkan untuk melengkapi persyaratan beasiswa / administrasi kampus.'
       }));
@@ -226,6 +230,7 @@ export default function Letters({ activeOrg, settings = {} }) {
           eventDayDate: 'Rabu, 29 Oktober 2025',
           eventTime: '18.30 WIB - selesai',
           eventLocation: prev.eventLocation || '',
+          kopPanitia: true,
           greetingCall: prev.greetingCall || 'Rekan',
           content: '"Rapat Anggota IV Dan Konferensi IV" Pimpinan Ranting IPNU & IPPNU',
           notes: "Demi kelancaran acara tersebut, kami mengundang " + (prev.greetingCall || 'Rekan') + " untuk menghadiri kegiatan tersebut."
@@ -258,7 +263,7 @@ export default function Letters({ activeOrg, settings = {} }) {
   };
 
   const handlePrint = () => {
-    printToPdf('.print-container');
+    printToPdf('.print-container', { pageSize: '210mm 330mm' });
   };
 
   const openViewer = (l) => {
@@ -893,38 +898,64 @@ export default function Letters({ activeOrg, settings = {} }) {
           </div>
 
           {formData.template !== 'undangan-ra' && (
+            <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Hari & Tanggal Acara</label>
-                <input
-                  type="text"
-                  value={formData.eventDayDate}
-                  onChange={(e) => setFormData({ ...formData, eventDayDate: e.target.value })}
-                  placeholder="Ahad, 13 September 2026"
-                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Hari & Tanggal Acara</label>
+                  <input
+                    type="text"
+                    value={formData.eventDayDate}
+                    onChange={(e) => setFormData({ ...formData, eventDayDate: e.target.value })}
+                    placeholder="Ahad, 13 September 2026"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Pelaksanaan</label>
+                  <input
+                    type="text"
+                    value={formData.eventTime}
+                    onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
+                    placeholder="19:30 WIB s.d Selesai"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Tempat / Lokasi</label>
+                  <input
+                    type="text"
+                    value={formData.eventLocation}
+                    onChange={(e) => setFormData({ ...formData, eventLocation: e.target.value })}
+                    placeholder="Gedung TPQ Baiturrohim"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Waktu Pelaksanaan</label>
-                <input
-                  type="text"
-                  value={formData.eventTime}
-                  onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
-                  placeholder="19:30 WIB s.d Selesai"
-                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-                />
+
+              <div className="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!formData.kopPanitia}
+                    onChange={(e) => setFormData({ ...formData, kopPanitia: e.target.checked })}
+                    className="accent-emerald-600 w-4 h-4"
+                  />
+                  Kop tanda tangan memakai "PANITIA ACARA ..." (untuk acara besar seperti MAKESTA / Pelantikan)
+                </label>
+                {formData.kopPanitia && (
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Nama Acara (di kop PANITIA)</label>
+                    <input
+                      type="text"
+                      value={formData.eventName}
+                      onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
+                      placeholder="MAKESTA PR IPNU-IPPNU Baros 2026"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                    />
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Tempat / Lokasi</label>
-                <input
-                  type="text"
-                  value={formData.eventLocation}
-                  onChange={(e) => setFormData({ ...formData, eventLocation: e.target.value })}
-                  placeholder="Gedung TPQ Baiturrohim"
-                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
-                />
-              </div>
-            </div>
+              </>
           )}
 
           <div>
@@ -1131,17 +1162,20 @@ export default function Letters({ activeOrg, settings = {} }) {
               /* ===================== LAYOUT PANITIA RA (PAN-UNDANGAN RA.docx) ===================== */
               <div className="overflow-x-auto">
               <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto min-w-[760px]"
-                style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl text-slate-900 text-[11.5px] leading-relaxed mx-auto"
+                style={{ fontFamily: "'Times New Roman', Times, serif", width: '210mm', minHeight: '330mm', padding: '15mm 20mm', display: 'flex', flexDirection: 'column' }}
               >
                 {/* KOP SURAT PANITIA RA (identik dengan template standar) */}
                 <KopSurat
-                  heading1={`Panitia ${selectedLetter.eventName ? selectedLetter.eventName.toUpperCase() : 'RAPAT ANGGOTA IV DAN KONFERENSI IV'}`}
-                  heading2={selectedLetter.kopLine2 || 'PIMPINAN RANTING IPNU DAN IPPNU'}
-                  area={selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}
+                  titleLines={[
+                    `Panitia ${selectedLetter.eventName ? selectedLetter.eventName.toUpperCase() : 'RAPAT ANGGOTA IV DAN KONFERENSI IV'}`,
+                    'PIMPINAN RANTING IPNU DAN IPPNU',
+                    selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'
+                  ]}
                   address={selectedLetter.kopAddress || settings.secretariatAddress || 'Jl. Otto Iskandardinata Baros Pekalongan Timur, 51129.'}
                   phone={selectedLetter.kopContact || settings.phoneContact || '0896-6943-8098 (Firdaus), 0882-2765-3594 (Irfan)'}
                   email={selectedLetter.kopEmail || settings.emailContact || 'ipnuppnubaros@gmail.com'}
+                  leaderPhone={[settings.leaderPhoneIpnu, settings.leaderPhoneIppnu].filter(Boolean).join(', ')}
                 />
 
                 {/* Nomor, Lampiran, Hal */}
@@ -1256,27 +1290,43 @@ export default function Letters({ activeOrg, settings = {} }) {
                     <p className="font-bold uppercase underline">{selectedLetter.chairmanIppnu || '-'}</p>
                   </div>
                 </div>
+
+                {/* Footer — selalu berada di bagian paling bawah halaman */}
+                <div
+                  className="text-left"
+                  style={{ marginTop: 'auto', paddingTop: '3mm', fontFamily: "'Times New Roman', Times, serif" }}
+                >
+                  <p className="font-bold uppercase" style={{ fontSize: '12px', color: '#00B050' }}>
+                    BELAJAR, BERJUANG, BERTAQWA
+                  </p>
+                </div>
               </div>
               </div>
             ) : (
               /* ===================== LAYOUT SURAT RESMI STANDAR (konsisten dgn format Pan. RA) ===================== */
               <div className="overflow-x-auto">
               <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl p-8 sm:p-12 text-slate-900 text-[11.5px] leading-relaxed max-w-[800px] mx-auto min-w-[760px]"
-                style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl text-slate-900 text-[11.5px] leading-relaxed mx-auto"
+                style={{ fontFamily: "'Times New Roman', Times, serif", width: '210mm', minHeight: '330mm', padding: '15mm 20mm', display: 'flex', flexDirection: 'column' }}
               >
                 {/* KOP SURAT RESMI (identik dengan template Pan. RA) */}
                 <KopSurat
-                  heading1={selectedLetter.organization === 'IPNU'
-                    ? 'PIMPINAN RANTING IKATAN PELAJAR NAHDLATUL ULAMA'
-                    : selectedLetter.organization === 'IPPNU'
-                    ? 'PIMPINAN RANTING IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'
-                    : 'PIMPINAN RANTING IPNU DAN IPPNU'}
-                  heading2={`${settings.villageName ? settings.villageName.toUpperCase() : 'KALIBAROS'} KELURAHAN KECAMATAN ${settings.subDistrict ? settings.subDistrict.toUpperCase() : 'PEKALONGAN TIMUR'}`}
-                  area={(settings.district || 'Kota Pekalongan').trim().toUpperCase()}
-                  address={settings.secretariatAddress || "Sekretariat: Gedung Bersama PR IPNU IPPNU Kalibaros"}
+                  titleLines={[
+                    'PIMPINAN RANTING',
+                    selectedLetter.organization === 'IPPNU'
+                      ? 'IKATAN PELAJAR PUTRI NAHDLATUL ULAMA'
+                      : 'IKATAN PELAJAR NAHDLATUL ULAMA',
+                    ...(selectedLetter.organization === 'BERSAMA'
+                      ? ['IKATAN PELAJAR PUTRI NAHDLATUL ULAMA']
+                      : []),
+                    selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'
+                  ]}
+                  address={settings.secretariatAddress || 'Jl. Otto Iskandardinata Baros Pekalongan Timur, 51129.'}
                   phone={settings.phoneContact || '0812-3456-7890'}
                   email={settings.emailContact || 'ipnuippnubaros@gmail.com'}
+                  leaderPhone={selectedLetter.organization === 'BERSAMA'
+                    ? [settings.leaderPhoneIpnu, settings.leaderPhoneIppnu].filter(Boolean).join(', ')
+                    : (selectedLetter.organization === 'IPPNU' ? settings.leaderPhoneIppnu : settings.leaderPhoneIpnu)}
                 />
 
                 {/* Nomor, Lampiran, Hal */}
@@ -1354,35 +1404,57 @@ export default function Letters({ activeOrg, settings = {} }) {
 
                 {/* Kolom Tanda Tangan */}
                 <div className="mt-8">
-                  <div className="text-center font-bold uppercase mb-8">
-                    PIMPINAN RANTING {selectedLetter.organization === 'BERSAMA' ? 'IPNU - IPPNU' : selectedLetter.organization} DESA {settings.villageName || 'SUKAMAJU'}
+                  <div className="text-center font-bold uppercase mb-8 leading-snug">
+                    {(selectedLetter.kopPanitia === true || selectedLetter.template === 'undangan-ra') && (
+                      <p>PANITIA {(selectedLetter.eventName || 'ACARA').toUpperCase()}</p>
+                    )}
+                    <p>PIMPINAN RANTING</p>
+                    {selectedLetter.organization === 'IPPNU' ? (
+                      <p>IKATAN PELAJAR PUTRI NAHDLATUL ULAMA</p>
+                    ) : selectedLetter.organization === 'BERSAMA' ? (
+                      <>
+                        <p>IKATAN PELAJAR NAHDLATUL ULAMA</p>
+                        <p>IKATAN PELAJAR PUTRI NAHDLATUL ULAMA</p>
+                      </>
+                    ) : (
+                      <p>IKATAN PELAJAR NAHDLATUL ULAMA</p>
+                    )}
+                    <p>{selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-8 text-center">
                     {/* Left: Sekretaris */}
                     <div>
-                      <p className="font-semibold">Sekretaris Mandataris,</p>
                       <div className="h-16" />
                       <p className="font-bold uppercase underline text-slate-900">
                         {selectedLetter.organization === 'IPPNU' 
                           ? (settings.secretaryIppnu || 'Dewi Lestari') 
                           : (settings.secretaryIpnu || 'Muhammad Rifqi')}
                       </p>
-                      <p className="text-[10px] text-slate-500">NIA: 3302.22.003</p>
+                      <p className="text-[10px] text-slate-500">Sekretaris Mandataris</p>
                     </div>
 
                     {/* Right: Ketua */}
                     <div>
-                      <p className="font-semibold">Ketua Mandataris,</p>
                       <div className="h-16" />
                       <p className="font-bold uppercase underline text-slate-900">
                         {selectedLetter.organization === 'IPPNU' 
                           ? (settings.leaderIppnu || 'Siti Nur Halizah') 
                           : (settings.leaderIpnu || 'Ahmad Fauzi')}
                       </p>
-                      <p className="text-[10px] text-slate-500">NIA: 3302.20.001</p>
+                      <p className="text-[10px] text-slate-500">Ketua Mandataris</p>
                     </div>
                   </div>
+                </div>
+
+                {/* Footer — selalu berada di bagian paling bawah halaman */}
+                <div
+                  className="text-left"
+                  style={{ marginTop: 'auto', paddingTop: '3mm', fontFamily: "'Times New Roman', Times, serif" }}
+                >
+                  <p className="font-bold uppercase" style={{ fontSize: '12px', color: '#00B050' }}>
+                    BELAJAR, BERJUANG, BERTAQWA
+                  </p>
                 </div>
 
               </div>
