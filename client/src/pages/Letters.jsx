@@ -42,7 +42,7 @@ function KopSurat({ titleLines = [], address, phone, email }) {
       {/* Kanan: Teks Kop rata kanan */}
       <div className="text-right pl-[6.2cm]">
         {titleLines.map((line, i) => (
-          <p key={i} className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '14px' }}>
+          <p key={i} className="font-bold uppercase leading-snug" style={{ color: '#00B050', fontSize: '12pt' }}>
             {line}
           </p>
         ))}
@@ -292,7 +292,7 @@ const [formData, setFormData] = useState(initialForm);
   };
 
   const handlePrint = () => {
-    printToPdf('.print-container', { pageSize: '210mm 330mm' });
+    printToPdf('.print-container', { pageSize: '215mm 330mm' });
   };
 
   const openViewer = (l) => {
@@ -1191,8 +1191,8 @@ const [formData, setFormData] = useState(initialForm);
               /* ===================== LAYOUT PANITIA RA (PAN-UNDANGAN RA.docx) ===================== */
               <div className="overflow-x-auto">
               <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl text-slate-900 text-[11.5px] leading-relaxed mx-auto"
-                style={{ fontFamily: "'Times New Roman', Times, serif", width: '210mm', minHeight: '330mm', padding: '15mm 20mm', display: 'flex', flexDirection: 'column' }}
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl text-slate-900 mx-auto"
+                style={{ fontFamily: "'Times New Roman', Times, serif", width: '215mm', minHeight: '330mm', padding: '15mm 20mm', display: 'flex', flexDirection: 'column', fontSize: '12pt', lineHeight: '1.15' }}
               >
                 {/* KOP SURAT PANITIA RA (identik dengan template standar) */}
                 <KopSurat
@@ -1207,7 +1207,7 @@ const [formData, setFormData] = useState(initialForm);
                 />
 
                 {/* Nomor, Lampiran, Hal */}
-                <div className="mb-5 text-[11.5px]">
+                <div className="mb-5">
                   <p><span className="font-semibold">Nomor</span>&emsp;: {selectedLetter.letterNumber}</p>
                   <p><span className="font-semibold">Lampiran</span>&nbsp;: -</p>
                   <p><span className="font-semibold">Hal</span>&emsp;&emsp;: <span className="font-bold underline">{selectedLetter.subject}</span></p>
@@ -1321,7 +1321,7 @@ const [formData, setFormData] = useState(initialForm);
 
                 {/* Footer — selalu berada di bagian paling bawah halaman */}
                 <div
-                  className="text-left"
+                  className="text-left surat-footer"
                   style={{ marginTop: 'auto', paddingTop: '3mm', fontFamily: "'Times New Roman', Times, serif" }}
                 >
                   <p className="font-bold uppercase" style={{ fontSize: '12px', color: '#00B050' }}>
@@ -1334,8 +1334,8 @@ const [formData, setFormData] = useState(initialForm);
               /* ===================== LAYOUT SURAT RESMI STANDAR (konsisten dgn format Pan. RA) ===================== */
               <div className="overflow-x-auto">
               <div
-                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl text-slate-900 text-[11.5px] leading-relaxed mx-auto"
-                style={{ fontFamily: "'Times New Roman', Times, serif", width: '210mm', minHeight: '330mm', padding: '15mm 20mm', display: 'flex', flexDirection: 'column' }}
+                className="print-container bg-white border border-slate-300 shadow-xl rounded-xl text-slate-900 mx-auto"
+                style={{ fontFamily: "'Times New Roman', Times, serif", width: '215mm', minHeight: '330mm', padding: '15mm 20mm', display: 'flex', flexDirection: 'column', fontSize: '12pt', lineHeight: '1.15' }}
               >
                 {/* KOP SURAT RESMI (identik dengan template Pan. RA) */}
                 <KopSurat
@@ -1409,13 +1409,8 @@ const [formData, setFormData] = useState(initialForm);
                   </p>
                 </div>
 
-                {/* Kalimat Penutup Resmi NU */}
+                {/* Kalimat Penutup */}
                 <div className="mt-5 space-y-1">
-                  <p className="font-serif italic font-bold">
-                    {selectedLetter.organization === 'IPPNU' 
-                      ? 'Wallahu Waliyyut Taufiq Wal Hidayah' 
-                      : 'Wallahul Muwaffiq Ila Aqwamith Thorieq'}
-                  </p>
                   <p className="italic">
                     Wassalamu'alaikum Wr.Wb
                   </p>
@@ -1474,7 +1469,7 @@ const [formData, setFormData] = useState(initialForm);
 
                 {/* Footer — selalu berada di bagian paling bawah halaman */}
                 <div
-                  className="text-left"
+                  className="text-left surat-footer"
                   style={{ marginTop: 'auto', paddingTop: '3mm', fontFamily: "'Times New Roman', Times, serif" }}
                 >
                   <p className="font-bold uppercase" style={{ fontSize: '12px', color: '#00B050' }}>

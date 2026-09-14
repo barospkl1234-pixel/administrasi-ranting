@@ -39,6 +39,15 @@ export function printToPdf(selector, options = {}) {
           border: none !important;
           box-shadow: none !important;
         }
+        /* Footer motto surat: paksa menempel di bagian paling bawah halaman cetak */
+        .surat-footer {
+          position: fixed !important;
+          bottom: 10mm !important;
+          left: 20mm !important;
+          right: 20mm !important;
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+        }
         .kta-print-card { margin: 15mm auto !important; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       }
