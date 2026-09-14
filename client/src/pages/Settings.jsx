@@ -239,16 +239,6 @@ export default function Settings({ settings, onSettingsUpdated }) {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">No. HP Ketua IPNU</label>
-                <input
-                  type="text"
-                  value={formData.leaderPhoneIpnu || ''}
-                  onChange={(e) => setFormData({ ...formData, leaderPhoneIpnu: e.target.value })}
-                  placeholder="Contoh: 0812-3456-7890"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-mono"
-                />
-              </div>
-              <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">Sekretaris IPNU</label>
                 <input
                   type="text"
@@ -299,16 +289,6 @@ export default function Settings({ settings, onSettingsUpdated }) {
                   value={formData.viceLeaderIppnu || ''}
                   onChange={(e) => setFormData({ ...formData, viceLeaderIppnu: e.target.value })}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">No. HP Ketua IPPNU</label>
-                <input
-                  type="text"
-                  value={formData.leaderPhoneIppnu || ''}
-                  onChange={(e) => setFormData({ ...formData, leaderPhoneIppnu: e.target.value })}
-                  placeholder="Contoh: 0812-3456-7890"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white font-mono"
                 />
               </div>
               <div>

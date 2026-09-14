@@ -29,8 +29,8 @@ const ROMAN_MONTHS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X
 /* KOP SURAT RESMI — dipakai SERAGAM oleh semua template (mengikuti PAN-UNDANGAN RA.docx) */
 /* Susunan baris kop: PIMPINAN RANTING / IKATAN PELAJAR NAHDLATUL ULAMA (utk IPNU) /
    IKATAN PELAJAR PUTRI NAHDLATUL ULAMA (utk IPPNU) / BAROS KELURAHAN KALIBAROS — semua berwarna hijau,
-   dan setelah no HP dicantumkan nomor ketua */
-function KopSurat({ titleLines = [], address, phone, email, leaderPhone }) {
+   dan baris no HP memakai No. HP Ketua IPNU beserta namanya */
+function KopSurat({ titleLines = [], address, phone, email }) {
   return (
     <div className="relative border-b-4 border-double border-slate-800 pb-3 mb-7">
       {/* Kiri: Logo IPNU & IPPNU berdampingan */}
@@ -50,7 +50,7 @@ function KopSurat({ titleLines = [], address, phone, email, leaderPhone }) {
           {address}
         </p>
         <p className="font-bold text-[9.5px] leading-snug" style={{ color: '#000000' }}>
-          {phone}{leaderPhone ? `, ${leaderPhone} (Ketua)` : ''}{' '}
+          {phone}{' '}
           <img src="/icon-telp.png" alt="Telp" className="inline-block w-[11px] h-[11px] align-middle" />
         </p>
         <p className="font-bold text-[9.5px] leading-snug">
@@ -73,6 +73,7 @@ export default function Letters({ activeOrg, settings = {} }) {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [viewerFile, setViewerFile] = useState(null);
+  const [allMembers, setAllMembers] = useState([]); // untuk kontak Ketua IPNU di kop surat
 
   // Import Surat Masuk
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -115,16 +116,18 @@ const [formData, setFormData] = useState(initialForm);
   const loadLetters = async () => {
     try {
       setLoading(true);
-      const [res, allRes] = await Promise.all([
+      const [res, allRes, membersRes] = await Promise.all([
         api.getLetters({
           org: activeOrg,
           type: typeFilter,
           search
         }),
-        api.getLetters()
+        api.getLetters(),
+        api.getMembers({ org: 'ALL', search: '' })
       ]);
       setLetters(res.data || []);
       allLettersRef.current = allRes.data || [];
+      setAllMembers(membersRes.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -135,6 +138,25 @@ const [formData, setFormData] = useState(initialForm);
   useEffect(() => {
     loadLetters();
   }, [activeOrg, typeFilter, search]);
+
+  // Kontak kop surat: No. HP + nama Ketua IPNU dan Ketua IPPNU, diambil dari Database Kader
+  // (kader yang jabatannya mengandung "Ketua"). Contoh: "0882-2765-3594 (Irfan), 0812-3456-7890 (Siti)".
+  const ketuaIpnu = allMembers.find(
+    (m) => m.organization === 'IPNU' && /ketua/i.test(m.position || '')
+  );
+  const ketuaIppnu = allMembers.find(
+    (m) => m.organization === 'IPPNU' && /ketua/i.test(m.position || '')
+  );
+  const kontakIpnu =
+    (ketuaIpnu && ketuaIpnu.phone ? `${ketuaIpnu.phone} (${ketuaIpnu.name})` : '') ||
+    (settings.leaderIpnu && settings.phoneContact ? `${settings.phoneContact} (${settings.leaderIpnu})` : '');
+  const kontakIppnu =
+    (ketuaIppnu && ketuaIppnu.phone ? `${ketuaIppnu.phone} (${ketuaIppnu.name})` : '') ||
+    (settings.leaderIppnu && settings.phoneContact ? `${settings.phoneContact} (${settings.leaderIppnu})` : '');
+  const kopKetuaKontak =
+    [kontakIpnu, kontakIppnu].filter(Boolean).join(', ') ||
+    settings.phoneContact ||
+    '0896-6943-8098 (Firdaus), 0882-2765-3594 (Irfan)';
 
   // Fetch suggested official letter number when opening add modal or changing org/category
   const fetchSuggestedNumber = async (org, cat, dept) => {
@@ -1180,9 +1202,8 @@ const [formData, setFormData] = useState(initialForm);
                     selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'
                   ]}
                   address={selectedLetter.kopAddress || settings.secretariatAddress || 'Jl. Otto Iskandardinata Baros Pekalongan Timur, 51129.'}
-                  phone={selectedLetter.kopContact || settings.phoneContact || '0896-6943-8098 (Firdaus), 0882-2765-3594 (Irfan)'}
+                  phone={selectedLetter.kopContact || kopKetuaKontak}
                   email={selectedLetter.kopEmail || settings.emailContact || 'ipnuppnubaros@gmail.com'}
-                  leaderPhone={[settings.leaderPhoneIpnu, settings.leaderPhoneIppnu].filter(Boolean).join(', ')}
                 />
 
                 {/* Nomor, Lampiran, Hal */}
@@ -1329,11 +1350,8 @@ const [formData, setFormData] = useState(initialForm);
                     selectedLetter.kopLine3 || 'BAROS KELURAHAN KALIBAROS'
                   ]}
                   address={settings.secretariatAddress || 'Jl. Otto Iskandardinata Baros Pekalongan Timur, 51129.'}
-                  phone={settings.phoneContact || '0812-3456-7890'}
+                  phone={kopKetuaKontak}
                   email={settings.emailContact || 'ipnuippnubaros@gmail.com'}
-                  leaderPhone={selectedLetter.organization === 'BERSAMA'
-                    ? [settings.leaderPhoneIpnu, settings.leaderPhoneIppnu].filter(Boolean).join(', ')
-                    : (selectedLetter.organization === 'IPPNU' ? settings.leaderPhoneIppnu : settings.leaderPhoneIpnu)}
                 />
 
                 {/* Nomor, Lampiran, Hal */}
