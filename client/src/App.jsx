@@ -9,6 +9,7 @@ import Finances from './pages/Finances';
 import Events from './pages/Events';
 import Inventory from './pages/Inventory';
 import Settings from './pages/Settings';
+import BirthdayModal from './components/BirthdayModal';
 import { api } from './utils/api';
 
 export default function App() {
@@ -117,6 +118,9 @@ export default function App() {
         </footer>
 
       </div>
+
+      {/* Notifikasi modal ulang tahun kader (otomatis 1x sehari) */}
+      <BirthdayModal villageName={settings.villageName} />
     </div>
   );
 }

@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Wallet, 
-  Mail, 
-  Calendar, 
-  Package, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Plus, 
-  FileText, 
+import {
+  Users,
+  Wallet,
+  Mail,
+  Calendar,
+  Package,
+  ArrowUpRight,
+  ArrowDownRight,
+  Plus,
+  FileText,
   Award,
   ChevronRight,
   Sparkles,
-  Clock
+  Clock,
+  Cake,
+  Gift
 } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { api } from '../utils/api';
@@ -49,7 +51,9 @@ export default function Dashboard({ activeOrg, setActivePage, settings = {} }) {
     );
   }
 
-  const { stats, upcomingEvents, recentLetters, recentTransactions } = data;
+  const { stats, upcomingEvents, recentLetters, recentTransactions, birthdays } = data;
+  const birthdayToday = birthdays?.today || [];
+  const birthdayUpcoming = birthdays?.upcoming || [];
 
   // Filter stats based on activeOrg
   const memberDisplayCount = activeOrg === 'IPNU' ? stats.ipnuCount : activeOrg === 'IPPNU' ? stats.ippnuCount : stats.totalMembers;
@@ -106,6 +110,32 @@ export default function Dashboard({ activeOrg, setActivePage, settings = {} }) {
           </div>
         </div>
       </div>
+
+      {/* Banner ulang tahun hari ini */}
+      {birthdayToday.length > 0 && (
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('siad-open-birthday'))}
+          className="w-full text-left relative rounded-3xl overflow-hidden bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-white p-5 sm:p-6 shadow-xl shadow-orange-950/10 hover:shadow-2xl hover:scale-[1.005] transition-all"
+        >
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1.2px,transparent_1.2px)] [background-size:14px_14px] pointer-events-none" />
+          <div className="relative flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+              <Cake className="w-7 h-7" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white/85">
+                🎉 Barakallah Fii Umrik — {birthdayToday.length} kader ultah hari ini
+              </p>
+              <p className="text-sm sm:text-base font-extrabold truncate">
+                {birthdayToday.slice(0, 3).map((m) => m.name).join(', ')}
+                {birthdayToday.length > 3 ? ` +${birthdayToday.length - 3} lainnya` : ''}
+              </p>
+              <p className="text-xs text-white/85 mt-0.5">Klik untuk memberi ucapan & lihat yang ultah 🎂</p>
+            </div>
+            <ChevronRight className="w-5 h-5 shrink-0" />
+          </div>
+        </button>
+      )}
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -307,6 +337,46 @@ export default function Dashboard({ activeOrg, setActivePage, settings = {} }) {
               })}
             </div>
           </div>
+
+          {/* Ulang tahun segera */}
+          {(birthdayToday.length > 0 || birthdayUpcoming.length > 0) && (
+            <div className="bg-white rounded-2xl p-6 border border-amber-200/70 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <Gift className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-base">Ulang Tahun Kader</h3>
+                    <p className="text-xs text-slate-500">7 hari ke depan</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('siad-open-birthday'))}
+                  className="text-xs font-bold text-amber-600 hover:text-amber-700"
+                >
+                  Buka
+                </button>
+              </div>
+              <div className="space-y-2">
+                {birthdayToday.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100">
+                    <img src={m.photo} alt={m.name} className="w-8 h-8 rounded-lg object-cover border border-white shrink-0" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'; }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">{m.name} 🎉</p>
+                      <p className="text-[10px] text-slate-500">Hari ini{m.ageTurning ? ` • ${m.ageTurning} th` : ''}</p>
+                    </div>
+                  </div>
+                ))}
+                {birthdayUpcoming.slice(0, 4).map((m) => (
+                  <div key={m.id} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-xs font-semibold text-slate-700 truncate">{m.name}</span>
+                    <span className="shrink-0 text-[10px] text-slate-500">{m.daysUntil === 1 ? 'Besok' : `${m.daysUntil} hari lagi`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Recent Letters */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">

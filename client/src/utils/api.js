@@ -64,6 +64,7 @@ export const api = {
     return fetchApi(`/members?${query}`);
   },
   getMember: (id) => fetchApi(`/members/${id}`),
+  getBirthdays: (upcoming = 7) => fetchApi(`/members/birthdays?upcoming=${upcoming}`),
   createMember: (data) => fetchApi('/members', { method: 'POST', body: JSON.stringify(data) }),
   updateMember: (id, data) => fetchApi(`/members/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteMember: (id) => fetchApi(`/members/${id}`, { method: 'DELETE' }),

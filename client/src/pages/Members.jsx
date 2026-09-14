@@ -26,7 +26,6 @@ export default function Members({ activeOrg, settings = {} }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [dusunFilter, setDusunFilter] = useState('');
   const [cadreFilter, setCadreFilter] = useState('');
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
 
@@ -76,7 +75,6 @@ export default function Members({ activeOrg, settings = {} }) {
       const res = await api.getMembers({
         org: activeOrg,
         search,
-        dusun: dusunFilter,
         cadre: cadreFilter
       });
       setMembers(res.data || []);
@@ -89,7 +87,7 @@ export default function Members({ activeOrg, settings = {} }) {
 
   useEffect(() => {
     loadMembers();
-  }, [activeOrg, search, dusunFilter, cadreFilter]);
+  }, [activeOrg, search, cadreFilter]);
 
   const handleOpenAdd = () => {
     setFormData({
@@ -249,17 +247,6 @@ export default function Members({ activeOrg, settings = {} }) {
         {/* Filter Dropdowns */}
         <div className="flex flex-wrap items-center gap-2.5">
           <select
-            value={dusunFilter}
-            onChange={(e) => setDusunFilter(e.target.value)}
-            className="px-3 py-2 text-xs bg-slate-50 rounded-xl border border-slate-200 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">Semua Dusun</option>
-            <option value="Dusun I Krajan">Dusun I Krajan</option>
-            <option value="Dusun II Karanganyar">Dusun II Karanganyar</option>
-            <option value="Dusun III Gunungwetan">Dusun III Gunungwetan</option>
-          </select>
-
-          <select
             value={cadreFilter}
             onChange={(e) => setCadreFilter(e.target.value)}
             className="px-3 py-2 text-xs bg-slate-50 rounded-xl border border-slate-200 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -300,7 +287,7 @@ export default function Members({ activeOrg, settings = {} }) {
         <div className="bg-white rounded-2xl p-12 text-center border border-slate-200/80 shadow-sm">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-bold text-slate-700">Data Kader Tidak Ditemukan</h3>
-          <p className="text-xs text-slate-500 mt-1">Coba sesuaikan kata kunci pencarian atau filter wilayah Anda.</p>
+          <p className="text-xs text-slate-500 mt-1">Coba sesuaikan kata kunci pencarian atau filter Anda.</p>
         </div>
       ) : viewMode === 'table' ? (
         /* TABLE VIEW */

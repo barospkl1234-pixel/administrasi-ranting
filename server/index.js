@@ -273,6 +273,46 @@ app.get('/api/dashboard', async (req, res) => {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 5);
 
+  // Kader yang berulang tahun hari ini + 7 hari ke depan (berbasis WIB)
+  const birthdays = (() => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const base = new Date(`${today}T00:00:00`);
+    const baseYear = base.getFullYear();
+    const todayMD = today.slice(5, 10);
+    const upcomingMap = {};
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + i);
+      const md = `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      if (!upcomingMap[md]) upcomingMap[md] = i;
+    }
+    const todayList = [];
+    const upcomingList = [];
+    members.forEach((m) => {
+      if (!m.dob) return;
+      const dobStr = String(m.dob).slice(0, 10);
+      if (dobStr.length < 10) return;
+      const md = dobStr.slice(5, 10);
+      const birthYear = parseInt(dobStr.slice(0, 4), 10);
+      if (md === todayMD) {
+        todayList.push({ ...m, ageTurning: Number.isNaN(birthYear) ? null : baseYear - birthYear });
+      } else if (upcomingMap[md]) {
+        const daysUntil = upcomingMap[md];
+        const d = new Date(base);
+        d.setDate(d.getDate() + daysUntil);
+        upcomingList.push({
+          ...m,
+          ageTurning: Number.isNaN(birthYear) ? null : d.getFullYear() - birthYear,
+          daysUntil,
+          upcomingDate: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+        });
+      }
+    });
+    todayList.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    upcomingList.sort((a, b) => a.daysUntil - b.daysUntil);
+    return { today: todayList, upcoming: upcomingList, todayCount: todayList.length, todayStr: today };
+  })();
+
   res.json({
     success: true,
     data: {
@@ -291,6 +331,7 @@ app.get('/api/dashboard', async (req, res) => {
         inventoryCount: inventory.length
       },
       upcomingEvents,
+      birthdays,
       recentLetters: letters.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 5),
       recentTransactions: finances.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 5),
       settings: db.settings

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, BellRing, X, Calendar, Clock, MapPin, ChevronRight } from 'lucide-react';
+import { Bell, BellRing, X, Calendar, Clock, MapPin, ChevronRight, Cake } from 'lucide-react';
 import { api } from '../utils/api';
 import {
   getEventStart,
@@ -22,6 +22,7 @@ export default function NotificationBell({ setActivePage }) {
   const [events, setEvents] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
   const [todayCount, setTodayCount] = useState(0);
+  const [birthdays, setBirthdays] = useState({ today: [], upcoming: [] });
   const [open, setOpen] = useState(false);
   const [permission, setPermission] = useState('unsupported');
   const [toasts, setToasts] = useState([]);
@@ -40,6 +41,9 @@ export default function NotificationBell({ setActivePage }) {
       setUpcoming(upcomingList);
       setTodayCount(list.filter(isToday).length);
       checkSchedule(list);
+    }).catch(() => {});
+    api.getBirthdays(7).then((res) => {
+      if (res?.data) setBirthdays({ today: res.data.today || [], upcoming: res.data.upcoming || [] });
     }).catch(() => {});
   };
 
@@ -181,22 +185,45 @@ export default function NotificationBell({ setActivePage }) {
     })
   );
 
+  const birthdayToday = birthdays.today || [];
+  const totalBadge = todayCount + birthdayToday.length;
+  const openBirthday = () => {
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent('siad-open-birthday'));
+  };
+
+  const birthdayBlock = birthdayToday.length > 0 && (
+    <button
+      onClick={openBirthday}
+      className="w-full text-left px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100 hover:from-amber-100 hover:to-orange-100 transition-colors"
+    >
+      <p className="flex items-center gap-1.5 text-[13px] font-bold text-amber-900">
+        <Cake className="w-4 h-4 shrink-0" />
+        🎉 {birthdayToday.length} kader ultah hari ini!
+      </p>
+      <p className="mt-0.5 text-[11px] text-amber-700 truncate">
+        {birthdayToday.slice(0, 3).map((m) => m.name).join(', ')}
+        {birthdayToday.length > 3 ? ` +${birthdayToday.length - 3} lainnya` : ''} — klik untuk beri ucapan
+      </p>
+    </button>
+  );
+
   return (
     <>
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setOpen((o) => !o)}
           className="relative p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-          title="Notifikasi Jadwal"
+          title="Notifikasi Jadwal & Ulang Tahun"
         >
-          {todayCount > 0 ? (
+          {totalBadge > 0 ? (
             <BellRing className="w-5 h-5 text-orange-500 animate-pulse" />
           ) : (
             <Bell className="w-5 h-5" />
           )}
-          {todayCount > 0 && (
+          {totalBadge > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
-              {todayCount}
+              {totalBadge}
             </span>
           )}
         </button>
@@ -205,10 +232,11 @@ export default function NotificationBell({ setActivePage }) {
         {open && (
           <div className="hidden sm:block absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-emerald-50/60">
-              <h3 className="text-sm font-bold text-emerald-900">Jadwal Agenda</h3>
+              <h3 className="text-sm font-bold text-emerald-900">Jadwal & Ulang Tahun</h3>
               <span className="text-[11px] text-slate-500">Otomatis diperbarui</span>
             </div>
             {permissionBanner}
+            {birthdayBlock}
             <div className="max-h-80 overflow-y-auto overscroll-contain">
               {eventList}
             </div>
@@ -250,6 +278,7 @@ export default function NotificationBell({ setActivePage }) {
               </div>
               <div className="overflow-y-auto overscroll-contain flex-1">
                 {permissionBanner}
+                {birthdayBlock}
                 {eventList}
               </div>
               <button

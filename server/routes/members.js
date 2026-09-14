@@ -4,6 +4,63 @@ import { readDB, writeDBChecked, generateId, todayWIB } from '../db.js';
 const router = express.Router();
 const wrap = fn => (req, res) => fn(req, res).catch(err => res.status(500).json({ success: false, message: err.message }));
 
+// Helper: hitung kader yang berulang tahun (hari ini + N hari ke depan, zona WIB)
+function getBirthdays(list, upcomingDays = 7) {
+  const pad = (n) => String(n).padStart(2, '0');
+  const todayStr = todayWIB(); // YYYY-MM-DD WIB
+  const today = new Date(`${todayStr}T00:00:00`);
+  const todayYear = today.getFullYear();
+  const todayMD = todayStr.slice(5, 10);
+
+  // Petakan MM-DD untuk N hari ke depan (menangani ganti bulan/tahun)
+  const upcomingMap = {};
+  for (let i = 1; i <= upcomingDays; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const md = `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    if (!upcomingMap[md]) upcomingMap[md] = i;
+  }
+
+  const todayList = [];
+  const upcomingList = [];
+
+  list.forEach((m) => {
+    if (!m.dob) return;
+    const dobStr = String(m.dob).slice(0, 10);
+    if (dobStr.length < 10) return;
+    const md = dobStr.slice(5, 10);
+    const birthYear = parseInt(dobStr.slice(0, 4), 10);
+    const ageTurning = Number.isNaN(birthYear) ? null : todayYear - birthYear;
+    if (md === todayMD) {
+      todayList.push({ ...m, ageTurning });
+    } else if (upcomingMap[md]) {
+      const daysUntil = upcomingMap[md];
+      const d = new Date(today);
+      d.setDate(d.getDate() + daysUntil);
+      upcomingList.push({
+        ...m,
+        ageTurning: Number.isNaN(birthYear) ? null : d.getFullYear() - birthYear,
+        daysUntil,
+        upcomingDate: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+      });
+    }
+  });
+
+  todayList.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  upcomingList.sort((a, b) => a.daysUntil - b.daysUntil || String(a.name).localeCompare(String(b.name)));
+
+  return { today: todayList, upcoming: upcomingList, todayCount: todayList.length, todayStr };
+}
+
+// GET /api/members/birthdays — kader yang ultah hari ini + segera (default 7 hari)
+// PENTING: didefinisikan sebelum route /:id agar tidak tertelan sebagai id
+router.get('/birthdays', wrap(async (req, res) => {
+  const db = await readDB();
+  const upcomingDays = Math.min(Math.max(parseInt(req.query.upcoming, 10) || 7, 1), 30);
+  const result = getBirthdays(db.members || [], upcomingDays);
+  res.json({ success: true, data: result });
+}));
+
 // GET all members with optional filtering
 router.get('/', wrap(async (req, res) => {
   const db = await readDB();
