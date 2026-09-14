@@ -11,12 +11,20 @@ import Inventory from './pages/Inventory';
 import Settings from './pages/Settings';
 import BirthdayModal from './components/BirthdayModal';
 import { api } from './utils/api';
+import { clearSession, isSessionExpired } from './utils/session';
+
+const SESSION_EXPIRED_MSG = 'Sesi login 12 jam telah berakhir. Silakan login kembali.';
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [activeOrg, setActiveOrg] = useState('ALL');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [sessionNotice, setSessionNotice] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (isSessionExpired()) {
+      clearSession();
+      return false;
+    }
     return localStorage.getItem('siad_logged_in') === 'true' && !!localStorage.getItem('siad_token');
   });
   const [settings, setSettings] = useState({
@@ -43,7 +51,7 @@ export default function App() {
       .catch(err => {
         if (err.message && err.message.includes('401')) {
           // Token expired/invalid — force logout
-          handleLogout();
+          handleLogout(err.expired === true ? SESSION_EXPIRED_MSG : 'Sesi tidak valid. Silakan login kembali.');
         } else {
           console.error('Failed to load settings:', err);
         }
@@ -72,18 +80,34 @@ export default function App() {
   };
 
   const handleLogin = () => {
+    setSessionNotice('');
     setIsLoggedIn(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('siad_token');
-    localStorage.removeItem('siad_logged_in');
+  const handleLogout = (notice = '') => {
+    clearSession();
     setIsLoggedIn(false);
     setActivePage('dashboard');
+    if (notice) setSessionNotice(notice);
   };
 
+  // Logout otomatis saat sesi 12 jam kedaluwarsa:
+  // 1) cek berkala tiap 1 menit (misal tab dibiarkan terbuka), 2) respons 401 dari server
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const timer = setInterval(() => {
+      if (isSessionExpired()) handleLogout(SESSION_EXPIRED_MSG);
+    }, 60 * 1000);
+    const onExpired = () => handleLogout(SESSION_EXPIRED_MSG);
+    window.addEventListener('siad-session-expired', onExpired);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('siad-session-expired', onExpired);
+    };
+  }, [isLoggedIn]);
+
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} notice={sessionNotice} />;
   }
 
   return (

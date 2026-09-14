@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { User, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, LogIn, Clock } from 'lucide-react';
 import { api } from '../utils/api';
+import { saveSession } from '../utils/session';
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, notice = '' }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,8 +17,7 @@ export default function Login({ onLogin }) {
 
     try {
       const res = await api.login(username, password);
-      localStorage.setItem('siad_token', res.token);
-      localStorage.setItem('siad_logged_in', 'true');
+      saveSession(res.token);
       onLogin();
     } catch (err) {
       setError(err.message || 'Username atau password salah. Silakan coba lagi.');
@@ -59,6 +59,14 @@ export default function Login({ onLogin }) {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Session expired notice */}
+            {notice && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium px-3 py-2 rounded-xl flex items-start gap-2">
+                <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{notice}</span>
+              </div>
+            )}
             
             {/* Username */}
             <div>

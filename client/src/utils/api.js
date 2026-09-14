@@ -22,9 +22,18 @@ export async function fetchApi(endpoint, options = {}) {
     },
   });
 
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.message || 'Terjadi kesalahan saat memproses data');
+    // Sesi kedaluwarsa / token tak valid → beri tahu App agar logout otomatis
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent('siad-session-expired'));
+    }
+    const err = new Error(
+      `${response.status}: ${data.message || 'Terjadi kesalahan saat memproses data'}`
+    );
+    err.status = response.status;
+    err.expired = data.expired === true;
+    throw err;
   }
   return data;
 }
@@ -124,7 +133,10 @@ export const api = {
     const response = await fetch(`${BASE_URL}/settings/export-backup`, { headers });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data.message || 'Gagal mengunduh backup');
+      if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent('siad-session-expired'));
+      }
+      throw new Error(`${response.status}: ${data.message || 'Gagal mengunduh backup'}`);
     }
     return response.blob();
   }

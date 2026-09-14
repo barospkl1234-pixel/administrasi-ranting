@@ -75,25 +75,36 @@ const AUTH_USERNAME = process.env.AUTH_USERNAME || 'PIMPINAN RANTING BAROS';
 const AUTH_PASSWORD = process.env.AUTH_PASSWORD || 'pelajarnukotasantri';
 const AUTH_SECRET = process.env.AUTH_SECRET || 'siad-ipnu-ippnu-ranting-secret-key-2025';
 
+// Masa berlaku sesi login: 12 jam (sinkron dengan client/src/utils/session.js)
+const SESSION_DURATION_MS = 12 * 60 * 60 * 1000;
+
 function signToken(username) {
   const payload = `${username}:${Date.now()}`;
   const sig = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
   return Buffer.from(`${payload}:${sig}`).toString('base64url');
 }
 
+// return: { valid: true } | { valid: false, reason: 'expired' | 'invalid' }
 function verifyToken(token) {
   try {
     const decoded = Buffer.from(token, 'base64url').toString();
     const parts = decoded.split(':');
-    if (parts.length < 3) return false;
+    if (parts.length < 3) return { valid: false, reason: 'invalid' };
     const sig = parts.pop();
     const payload = parts.join(':');
     const expected = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return false;
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+      return { valid: false, reason: 'invalid' };
+    }
     const username = parts[0];
-    return username === AUTH_USERNAME;
+    if (username !== AUTH_USERNAME) return { valid: false, reason: 'invalid' };
+    const issuedAt = Number(parts[1]);
+    if (!Number.isFinite(issuedAt) || Date.now() - issuedAt > SESSION_DURATION_MS) {
+      return { valid: false, reason: 'expired' };
+    }
+    return { valid: true };
   } catch {
-    return false;
+    return { valid: false, reason: 'invalid' };
   }
 }
 
@@ -106,7 +117,11 @@ function requireAuth(req, res, next) {
   }
 
   const token = authHeader.slice(7);
-  if (!verifyToken(token)) {
+  const check = verifyToken(token);
+  if (!check.valid) {
+    if (check.reason === 'expired') {
+      return res.status(401).json({ success: false, expired: true, message: 'Sesi login 12 jam telah berakhir. Silakan login kembali.' });
+    }
     return res.status(401).json({ success: false, message: 'Sesi tidak valid. Silakan login kembali.' });
   }
 
@@ -183,7 +198,7 @@ app.post('/api/auth/login', trackLogin, async (req, res) => {
   }
   clearLoginFail(req);
   const token = signToken(username);
-  res.json({ success: true, token, message: 'Login berhasil' });
+  res.json({ success: true, token, expiresInHours: 12, message: 'Login berhasil. Sesi berlaku 12 jam.' });
 });
 
 // Health Check
