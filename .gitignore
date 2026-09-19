@@ -1,4 +1,6 @@
 node_modules/
-client/dist/
-server/uploads/
+public/uploads/
+data/
 .env
+.env.local
+.next/

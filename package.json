@@ -1,34 +1,37 @@
 {
   "name": "administrasi-ipnu-ippnu",
-  "version": "1.0.0",
-  "description": "Sistem Administrasi Pimpinan Ranting (PR) IPNU IPPNU Desa",
+  "version": "2.0.0",
+  "description": "Sistem Informasi & Administrasi Terpadu (SIAD) PR IPNU IPPNU - Next.js Full-Stack App",
   "type": "module",
-  "main": "server/index.js",
   "scripts": {
-    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
-    "server": "node server/index.js",
-    "client": "npm run dev --prefix client",
-    "dev": "node dev.js",
-    "build": "npm run build --prefix client"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "keywords": [
     "ipnu",
     "ippnu",
     "administrasi",
     "desa",
-    "ranting"
+    "ranting",
+    "nextjs"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@upstash/redis": "^1.38.4",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.2",
-    "multer": "^2.3.0",
-    "pg": "^8.13.1"
+    "lucide-react": "^0.475.0",
+    "next": "^14.2.24",
+    "pg": "^8.13.1",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-pdf": "^10.5.0"
   },
-  "overrides": {
-    "qs": "6.16.0"
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17"
   }
 }

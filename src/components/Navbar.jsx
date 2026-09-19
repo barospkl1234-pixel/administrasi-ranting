@@ -1,0 +1,112 @@
+'use client';
+import React from 'react';
+import { Menu, Calendar } from 'lucide-react';
+import { formatDateWithDay, getHijriDateString, todayWIBString } from '../utils/formatters';
+import NotificationBell from './NotificationBell';
+
+export default function Navbar({ activePage, activeOrg, setActiveOrg, settings = {}, onMenuClick, setActivePage }) {
+  const pageTitles = {
+    dashboard: 'Dashboard Administrasi',
+    members: 'Database Kader & KTA Digital',
+    letters: 'Administrasi Persuratan (E-Surat)',
+    finances: 'Pengelolaan Buku Kas & Keuangan',
+    events: 'Agenda Kegiatan & Presensi Digital',
+    inventory: 'Inventaris & Perlengkapan Ranting',
+    settings: 'Pengaturan Profil & Pimpinan Ranting'
+  };
+
+  const todayIso = todayWIBString();
+  const masehiDate = formatDateWithDay(todayIso);
+  const hijriDate = getHijriDateString(todayIso);
+
+  return (
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3 sm:py-3.5 no-print">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        
+        {/* Left Side: Mobile Menu Button & Page Title */}
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 shrink-0"
+            aria-label="Buka Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl font-black text-slate-800 tracking-tight truncate">
+              {pageTitles[activePage] || 'Administrasi Ranting'}
+            </h1>
+            <p className="text-[11px] sm:text-xs text-slate-500 flex items-center gap-1.5 font-medium min-w-0">
+              <span className="truncate">PR IPNU - IPPNU Kelurahan {settings.villageName || 'Kalibaros'}</span>
+              <span className="hidden sm:inline text-slate-300 shrink-0">•</span>
+              <span className="hidden sm:inline shrink-0">Kec. {settings.subDistrict || 'Pekalongan Timur'}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Right Side: Org Filter Tabs & Islamic Date Banner */}
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 w-full sm:w-auto">
+          
+          {/* Organization Switcher Pills */}
+          <div className="flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 text-[11px] sm:text-xs font-bold max-w-full overflow-x-auto -mx-1 px-1 flex-nowrap sm:flex-wrap sm:overflow-visible">
+            <button
+              onClick={() => setActiveOrg('ALL')}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all whitespace-nowrap ${
+                activeOrg === 'ALL'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              onClick={() => setActiveOrg('IPNU')}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeOrg === 'IPNU'
+                  ? 'bg-[#006837] text-white shadow-sm'
+                  : 'text-slate-600 hover:text-emerald-700'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              PR IPNU
+            </button>
+            <button
+              onClick={() => setActiveOrg('IPPNU')}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeOrg === 'IPPNU'
+                  ? 'bg-[#d97706] text-white shadow-sm'
+                  : 'text-slate-600 hover:text-amber-700'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              PR IPPNU
+            </button>
+          </div>
+
+          {/* Notification Bell */}
+          <NotificationBell setActivePage={setActivePage} />
+
+          {/* Date Badge */}
+          <div className="hidden md:flex flex-col text-right pl-2 border-l border-slate-200">
+            <span className="text-xs font-semibold text-slate-700">{masehiDate}</span>
+            <span className="text-[10px] font-bold text-emerald-700 font-mono tracking-tight">{hijriDate}</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Mobile Date Bar */}
+      <div className="md:hidden flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-100">
+        <span className="flex items-center gap-1.5 min-w-0">
+          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <span className="text-xs font-bold text-slate-700 truncate">{masehiDate}</span>
+        </span>
+        <span className="text-[10px] font-bold text-emerald-700 font-mono tracking-tight shrink-0">{hijriDate}</span>
+      </div>
+    </header>
+  );
+}
+
+

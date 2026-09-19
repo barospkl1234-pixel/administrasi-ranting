@@ -1,15 +1,4 @@
 {
-  "installCommand": "npm install && npm install --prefix server && npm install --prefix client",
-  "buildCommand": "npm run build",
-  "outputDirectory": "client/dist",
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "server/**/*.{js,json}"
-    }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/uploads/(.*)", "destination": "/api/index.js" },
-    { "source": "/((?!api/|uploads/).*)", "destination": "/index.html" }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs"
 }
