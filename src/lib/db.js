@@ -82,7 +82,7 @@ const DEFAULT_STORE = {
     subDistrict: "Pekalongan Timur",
     district: "Kota Pekalongan",
     province: "Jawa Tengah",
-    postCode: "51128",
+    postCode: "51129",
     secretariatAddress: "Sekretariat Bersama PR IPNU IPPNU, Kel. Kalibaros, Kec. Pekalongan Timur, Kota Pekalongan",
     period: "2025 - 2027",
     codeIpnu: "7354",
